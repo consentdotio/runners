@@ -1,17 +1,17 @@
 import { chromium, type Browser } from "playwright";
-import { createContext } from "./context.js";
+import { createContext } from "./context";
 import type {
-  RunnerTestResult,
-  RunTestsOptions,
-  RunTestsResult,
-} from "./types.js";
+  RunnerResult,
+  RunRunnersOptions,
+  RunRunnersResult,
+} from "./types";
 
 const DEFAULT_TIMEOUT = 30_000; // 30 seconds
 
-export async function runTests(
-  options: RunTestsOptions
-): Promise<RunTestsResult> {
-  const { url, tests, region, runId, timeout = DEFAULT_TIMEOUT } = options;
+export async function runRunners(
+  options: RunRunnersOptions
+): Promise<RunRunnersResult> {
+  const { url, runners, region, runId, timeout = DEFAULT_TIMEOUT } = options;
 
   let browser: Browser | null = null;
 
@@ -23,24 +23,25 @@ export async function runTests(
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    const testContext = createContext(page, url, { region, runId });
+    const runnerContext = createContext(page, url, { region, runId });
 
-    const results: RunnerTestResult[] = [];
+    const results: RunnerResult[] = [];
 
-    for (const test of tests) {
+    for (const runner of runners) {
       const startTime = Date.now();
-      let result: RunnerTestResult;
+      let result: RunnerResult;
 
       try {
-        // Navigate to the URL before each test
+        // Navigate to the URL before each runner
         await page.goto(url, { waitUntil: "networkidle" });
 
-        // Run the test with timeout
+        // Run the runner with timeout
         result = await Promise.race([
-          test(testContext),
-          new Promise<RunnerTestResult>((_, reject) =>
+          runner(runnerContext),
+          new Promise<RunnerResult>((_, reject) =>
             setTimeout(
-              () => reject(new Error(`Test exceeded timeout of ${timeout}ms`)),
+              () =>
+                reject(new Error(`Runner exceeded timeout of ${timeout}ms`)),
               timeout
             )
           ),

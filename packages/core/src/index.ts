@@ -1,19 +1,34 @@
-export { runTests } from "./runner.js";
+export { runRunners } from "./runner";
 export {
-  type RunnerTest,
-  type RunnerTestContext,
-  type RunnerTestResult,
-  type RunTestsOptions,
-  type RunTestsResult,
-  type TestStatus,
-} from "./types.js";
+  type Runner,
+  type RunnerContext,
+  type RunnerResult,
+  type RunRunnersOptions,
+  type RunRunnersResult,
+  type RunStatus,
+} from "./types";
 
 // Re-export config
-export { defineConfig, type RunnersConfig } from "./config.js";
+export { defineConfig, type RunnersConfig } from "./config";
 
-// Export test discovery utilities
-export { discoverTests } from "./utils/discover.js";
+// Export runner discovery utilities
+export { discoverRunners, clearDiscoveryCache } from "./utils/discover";
 export {
-  detectDirectives,
-  type DirectiveDetectionResult,
-} from "./utils/directive-detector.js";
+  hasModuleDirective,
+  hasModuleDirectiveSync,
+  hasAnyDirective,
+  hasAnyDirectiveSync,
+  useRunnerPattern,
+  useRunnerFunctionPattern,
+} from "./utils/directive-detector";
+export {
+  writeDebugFile,
+  normalizePath,
+  getRelativePath,
+} from "./utils/debug";
+export { getTsConfigOptions } from "./utils/tsconfig";
+export {
+  getRunnerInfo,
+  type RunnerInfo,
+  type RunnerInfoOptions,
+} from "./utils/runner-info";

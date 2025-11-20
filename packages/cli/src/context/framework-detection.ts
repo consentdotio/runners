@@ -45,7 +45,7 @@ export async function detectFramework(
     let pkg = "unknown";
 
     if ("next" in deps) {
-      framework = "Next.js";
+      framework = "Next";
       frameworkVersion = deps.next;
       pkg = "next";
     } else if ("@remix-run/react" in deps) {

@@ -12,8 +12,8 @@ import type { CliCommand } from "./context/types";
 import { formatLogMessage } from "./utils/logger";
 
 // Export utilities for programmatic use
-export { discoverTests } from "runners";
-export { loadTests } from "./utils/load-tests.js";
+export { discoverRunners } from "runners";
+export { loadRunners } from "./utils/load-runners";
 
 // Define commands (using types from context)
 const commands: CliCommand[] = [

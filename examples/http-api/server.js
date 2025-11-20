@@ -8,18 +8,18 @@
  */
 
 import { createHttpRunner } from '@runners/http';
-import { discoverTests } from 'runners';
+import { discoverRunners } from 'runners';
 
 const PORT = process.env.PORT || 3000;
 const REGION = process.env.RUNNER_REGION || 'us-east-1';
 
-// Discover tests - only functions with "use runner" directive are discovered by default
-const testsMap = await discoverTests('src/runners/**/*.ts');
-const tests = Object.fromEntries(testsMap);
+// Discover runners - only functions with "use runner" directive are discovered by default
+const runnersMap = await discoverRunners('src/runners/**/*.ts');
+const runners = Object.fromEntries(runnersMap);
 
 // Create the HTTP handler
 const handler = createHttpRunner({
-  tests,
+  runners,
   region: REGION,
 });
 
@@ -105,10 +105,10 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Runners HTTP API server running on http://localhost:${PORT}`);
   console.log(`Region: ${REGION}`);
-  console.log(`Available tests: ${Object.keys(tests).join(', ')}`);
+  console.log(`Available runners: ${Object.keys(runners).join(', ')}`);
   console.log('\nExample request:');
   console.log(`curl -X POST http://localhost:${PORT} \\`);
   console.log(`  -H "Content-Type: application/json" \\`);
-  console.log(`  -d '{"url": "https://example.com", "tests": ["exampleTitleVisibleTest"]}'`);
+  console.log(`  -d '{"url": "https://example.com", "runners": ["exampleTitleVisibleTest"]}'`);
 });
 

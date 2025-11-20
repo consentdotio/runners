@@ -1,9 +1,9 @@
 'use runner';
 
-import type { RunnerTest } from 'runners';
+import type { Runner } from 'runners';
 
 // Module-level directive applies to all exported functions in this file
-export const testOne: RunnerTest = async (ctx) => {
+export const testOne: Runner = async (ctx) => {
   const { page, url, log } = ctx;
   log('Test one', { url });
   return {
@@ -13,7 +13,7 @@ export const testOne: RunnerTest = async (ctx) => {
   };
 };
 
-export const testTwo: RunnerTest = async (ctx) => {
+export const testTwo: Runner = async (ctx) => {
   const { page, url, log } = ctx;
   log('Test two', { url });
   return {

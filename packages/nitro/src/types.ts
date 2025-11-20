@@ -1,12 +1,12 @@
 export type ModuleOptions = {
   /**
-   * Pattern to scan for test files.
-   * @default 'src/**\/*.ts'
+   * Pattern to scan for runner files.
+   * @default ['src/**\/*.ts', 'runners/**\/*.ts']
    */
-  pattern?: string;
+  pattern?: string | string[];
 
   /**
-   * Region identifier for tests.
+   * Region identifier for runners.
    * Can be overridden by RUNNER_REGION environment variable.
    */
   region?: string;

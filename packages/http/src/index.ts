@@ -1,28 +1,44 @@
-import { runTests } from "runners";
+import { runRunners, getRunnerInfo } from "runners";
 import type {
   CreateHttpRunnerOptions,
   HttpRunnerRequest,
-  RunnerTest,
-} from "./types.js";
+  Runner,
+} from "./types";
 
 /**
- * Creates an HTTP handler for running tests via API
+ * Creates an HTTP handler for running runners via API
  *
  * @param options - Configuration options
- * @param options.tests - Record of test name to test function
+ * @param options.runners - Record of runner name to runner function
  * @param options.region - Optional region identifier
  * @returns HTTP request handler function
  */
 export function createHttpRunner(
   options: CreateHttpRunnerOptions
 ): (req: Request) => Promise<Response> {
-  const { tests, region } = options;
+  const { runners, region } = options;
 
   return async (req: Request): Promise<Response> => {
-    // Only handle POST requests
+    // Handle GET requests - return runner information
+    if (req.method === "GET") {
+      const info = getRunnerInfo(runners, {
+        region,
+        usageExample: {
+          method: "POST",
+          endpoint: "/api/runner",
+          exampleUrl: "https://example.com",
+        },
+      });
+      return new Response(JSON.stringify(info), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle POST requests - run runners
     if (req.method !== "POST") {
       return new Response(
-        JSON.stringify({ error: "Method not allowed. Use POST." }),
+        JSON.stringify({ error: "Method not allowed. Use GET or POST." }),
         {
           status: 405,
           headers: { "Content-Type": "application/json" },
@@ -59,11 +75,11 @@ export function createHttpRunner(
         );
       }
 
-      if (!Array.isArray(body.tests) || body.tests.length === 0) {
+      if (!Array.isArray(body.runners) || body.runners.length === 0) {
         return new Response(
           JSON.stringify({
             error:
-              'Missing or empty "tests" array. At least one test is required.',
+              'Missing or empty "runners" array. At least one runner is required.',
           }),
           {
             status: 400,
@@ -72,15 +88,15 @@ export function createHttpRunner(
         );
       }
 
-      // Resolve test functions by name
-      const resolvedTests: RunnerTest[] = [];
-      const missingTests: string[] = [];
+      // Resolve runner functions by name
+      const resolvedRunners: Runner[] = [];
+      const missingRunners: string[] = [];
 
-      for (const testName of body.tests) {
-        if (typeof testName !== "string") {
+      for (const runnerName of body.runners) {
+        if (typeof runnerName !== "string") {
           return new Response(
             JSON.stringify({
-              error: `Invalid test name: ${String(testName)}. Test names must be strings.`,
+              error: `Invalid runner name: ${String(runnerName)}. Runner names must be strings.`,
             }),
             {
               status: 400,
@@ -89,20 +105,20 @@ export function createHttpRunner(
           );
         }
 
-        const test = tests[testName];
-        if (!test) {
-          missingTests.push(testName);
+        const runner = runners[runnerName];
+        if (!runner) {
+          missingRunners.push(runnerName);
         } else {
-          resolvedTests.push(test);
+          resolvedRunners.push(runner);
         }
       }
 
-      if (missingTests.length > 0) {
+      if (missingRunners.length > 0) {
         return new Response(
           JSON.stringify({
-            error: "One or more tests not found",
-            missingTests,
-            availableTests: Object.keys(tests),
+            error: "One or more runners not found",
+            missingRunners,
+            availableRunners: Object.keys(runners),
           }),
           {
             status: 400,
@@ -114,10 +130,10 @@ export function createHttpRunner(
       // Use region from options or request body (options takes precedence)
       const finalRegion = region || body.region;
 
-      // Run tests
-      const result = await runTests({
+      // Run runners
+      const result = await runRunners({
         url: body.url,
-        tests: resolvedTests,
+        runners: resolvedRunners,
         region: finalRegion,
         runId: body.runId,
       });
@@ -134,7 +150,7 @@ export function createHttpRunner(
 
       return new Response(
         JSON.stringify({
-          error: "Test execution failed",
+          error: "Runner execution failed",
           details: errorMessage,
         }),
         {

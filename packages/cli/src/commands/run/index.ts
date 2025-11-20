@@ -1,7 +1,7 @@
-import { runTests, type RunnerTestResult } from "runners";
+import { runRunners, type RunnerResult } from "runners";
 import { defineConfig } from "@runners/config";
-import { loadTests } from "../../utils/load-tests.js";
-import type { CliContext } from "../../context/types.js";
+import { loadRunners } from "../../utils/load-runners";
+import type { CliContext } from "../../context/types";
 
 export async function run(context: CliContext): Promise<void> {
   const { logger, flags, commandArgs, error: errorHandler } = context;
@@ -9,15 +9,15 @@ export async function run(context: CliContext): Promise<void> {
   let config: {
     url: string;
     region?: string;
-    tests: string[];
+    runners: string[];
   };
 
   // Extract options from flags and command args
   const url = flags.url as string | undefined;
   const region = flags.region as string | undefined;
   const configPath = flags.config as string | undefined;
-  // Tests are passed as command args (positional arguments after 'run')
-  const tests = commandArgs.length > 0 ? commandArgs : undefined;
+  // Runners are passed as command args (positional arguments after 'run')
+  const runners = commandArgs.length > 0 ? commandArgs : undefined;
 
   if (configPath) {
     // Load config from file
@@ -43,30 +43,30 @@ export async function run(context: CliContext): Promise<void> {
     config = {
       url,
       region,
-      tests: tests || [],
+      runners: runners || [],
     };
   }
 
   // Directives are now required by default
-  const testFunctions = await loadTests(
-    config.tests.length > 0 ? config.tests : undefined,
+  const runnerFunctions = await loadRunners(
+    config.runners.length > 0 ? config.runners : undefined,
     true
   );
 
-  if (testFunctions.length === 0) {
+  if (runnerFunctions.length === 0) {
     logger.error(
-      'No tests found. Make sure you have test files with "use runner" directive in src/**/*.ts'
+      'No runners found. Make sure you have runner files with "use runner" directive in src/**/*.ts'
     );
     process.exit(1);
   }
 
   logger.info(
-    `Running ${testFunctions.length} test(s) against ${config.url}...`
+    `Running ${runnerFunctions.length} runner(s) against ${config.url}...`
   );
 
-  const result = await runTests({
+  const result = await runRunners({
     url: config.url,
-    tests: testFunctions,
+    runners: runnerFunctions,
     region: config.region,
   });
 
@@ -74,15 +74,15 @@ export async function run(context: CliContext): Promise<void> {
   logger.message("\nResults:");
   logger.message(JSON.stringify(result, null, 2));
 
-  // Exit with non-zero if any test failed
+  // Exit with non-zero if any runner failed
   const hasFailures = result.results.some(
-    (r: RunnerTestResult) => r.status === "fail" || r.status === "error"
+    (r: RunnerResult) => r.status === "fail" || r.status === "error"
   );
 
   if (hasFailures) {
-    logger.error("Some tests failed");
+    logger.error("Some runners failed");
     process.exit(1);
   } else {
-    logger.success("All tests passed!");
+    logger.success("All runners passed!");
   }
 }

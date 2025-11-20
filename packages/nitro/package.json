@@ -2,32 +2,33 @@
   "name": "@runners/nitro",
   "version": "0.0.0",
   "description": "Nitro integration for runners SDK",
+  "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
   "exports": {
     ".": {
       "default": "./dist/index.js"
     }
   },
+  "main": "dist/index.js",
   "files": [
     "dist"
   ],
-  "license": "MIT",
   "scripts": {
     "build": "rslib build",
-    "dev": "rslib build --watch",
     "clean": "tsc --build --clean && rm -rf dist ||:",
+    "dev": "rslib build --watch",
     "fmt": "pnpm biome format --write .",
     "lint": "pnpm biome lint ./src",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@runners/builders": "workspace:*",
     "@runners/http": "workspace:*",
     "runners": "workspace:*"
   },
   "devDependencies": {
-    "@runners/tsconfig": "workspace:*",
     "@rslib/core": "^0.18.0",
+    "@runners/tsconfig": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   },

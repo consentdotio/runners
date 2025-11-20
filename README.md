@@ -1,14 +1,14 @@
 # runners
 
-A small SDK for writing Playwright tests that can be executed by an API orchestrator or a local CLI, without worrying about browsers, containers, or regions.
+A small SDK for writing Playwright runners that can be executed by an API orchestrator or a local CLI, without worrying about browsers, containers, or regions.
 
-You write tiny test functions:
+You write tiny runner functions:
 
 ```ts
 // src/runners/cookie-banner-visible.ts
-import type { RunnerTest } from "runners";
+import type { Runner } from "runners";
 
-export const cookieBannerVisibleTest: RunnerTest = async (ctx) => {
+export const cookieBannerVisibleTest: Runner = async (ctx) => {
   "use runner";
 
   const { page, url, region, log } = ctx;
@@ -36,7 +36,7 @@ The `runners` SDK takes care of:
 * exposing a HTTP handler for remote orchestration
 * exposing a CLI command for local or CI use
 
-The same test file can be run:
+The same runner file can be run:
 
 * locally in your terminal
 * in a container in a specific region
@@ -65,42 +65,42 @@ yarn add runners
 
 ## Core concepts
 
-**RunnerTest**
-
-A single Playwright based test, expressed as an async function that:
-
-* receives a `RunnerTestContext`
-* returns a `RunnerTestResult`
-
 **Runner**
+
+A single Playwright based runner, expressed as an async function that:
+
+* receives a `RunnerContext`
+* returns a `RunnerResult`
+
+**Runner Harness**
 
 Something that:
 
 * loads a URL in Playwright
-* executes one or more `RunnerTest` functions against it
+* executes one or more `Runner` functions against it
 * returns normalised JSON
 
 **Orchestrator**
 
 Anything that:
 
-* decides which URLs, regions and tests to run
-* calls one or more runners
+* decides which URLs, regions and runners to run
+* calls one or more runner harnesses
 * stores and aggregates results
 
 `runners` only handles the **runner** part and the small harness around it. Your own code can be the orchestrator, or you can wire it into a workflow engine.
 
 ---
 
-## Writing your first test
+## Writing your first runner
 
 Create a file anywhere in `src/`:
 
 ```ts
 // src/runners/example-title-visible.ts
-import type { RunnerTest } from "runner";
+import type { Runner } from "runners";
 
-export const exampleTitleVisibleTest: RunnerTest = async (ctx) => {
+export const exampleTitleVisibleTest: Runner = async (ctx) => {
   "use runner";
 
   const { page, url, log } = ctx;
@@ -118,18 +118,18 @@ export const exampleTitleVisibleTest: RunnerTest = async (ctx) => {
 };
 ```
 
-The `"use runner"` directive is required for test discovery. It tells the runner that this function should be executed as a test.
+The `"use runner"` directive is required for runner discovery. It tells the runner harness that this function should be executed as a runner.
 You do not need to launch Playwright or close the browser yourself.
 
-Only functions with this directive will be discovered as tests.
-This allows you to have helper functions or utilities in the same file without them being treated as tests.
+Only functions with this directive will be discovered as runners.
+This allows you to have helper functions or utilities in the same file without them being treated as runners.
 
 ### Context
 
-The `RunnerTestContext` looks like:
+The `RunnerContext` looks like:
 
 ```ts
-type RunnerTestContext = {
+type RunnerContext = {
   page: import("playwright").Page;
   url: string;
   region?: string;
@@ -140,7 +140,7 @@ type RunnerTestContext = {
 
 ---
 
-## Running tests locally (CLI)
+## Running runners locally (CLI)
 
 Install the CLI (same package):
 
@@ -153,9 +153,9 @@ npx runner run \
 
 By default the CLI will:
 
-* scan `src/**/*.ts` for test files
+* scan `src/**/*.ts` for runner files
 * discover only exported async functions that have the `"use runner"` directive
-* run the requested tests against the URL
+* run the requested runners against the URL
 * print a summary and exit non zero on failures
 
 You can provide a config file to avoid long flags:
@@ -164,19 +164,19 @@ You can provide a config file to avoid long flags:
 npx runner run --config runners.config.ts
 ```
 
-### Directive-based test discovery
+### Directive-based runner discovery
 
-The CLI only discovers tests that have the `"use runner"` directive. This ensures that helper functions and utilities in your test files are not accidentally executed as tests.
+The CLI only discovers runners that have the `"use runner"` directive. This ensures that helper functions and utilities in your runner files are not accidentally executed as runners.
 
-* **Module-level directive**: If a file has `"use runner";` at the top, all exported async functions in that file are considered tests
-* **Function-level directive**: If a function has `"use runner";` as its first statement, that function is considered a test
+* **Module-level directive**: If a file has `"use runner";` at the top, all exported async functions in that file are considered runners
+* **Function-level directive**: If a function has `"use runner";` as its first statement, that function is considered a runner
 
 Example with function-level directive:
 
 ```ts
-export const myTest: RunnerTest = async (ctx) => {
+export const myRunner: Runner = async (ctx) => {
   "use runner";
-  // ... test implementation
+  // ... runner implementation
 };
 ```
 
@@ -185,24 +185,24 @@ Example with module-level directive:
 ```ts
 "use runner";
 
-export const test1: RunnerTest = async (ctx) => {
-  // ... test implementation
+export const runner1: Runner = async (ctx) => {
+  // ... runner implementation
 };
 
-export const test2: RunnerTest = async (ctx) => {
-  // ... test implementation
+export const runner2: Runner = async (ctx) => {
+  // ... runner implementation
 };
 ```
 
 Example `runners.config.ts`:
 
 ```ts
-import { defineConfig } from "runner/config";
+import { defineConfig } from "runners/config";
 
 export default defineConfig({
   url: "https://example.com",
   region: "eu-west-1",
-  tests: ["cookieBannerVisibleTest", "exampleTitleVisibleTest"],
+  runners: ["cookieBannerVisibleTest", "exampleTitleVisibleTest"],
 });
 ```
 
@@ -215,12 +215,12 @@ You can expose a runner as an HTTP endpoint, for use by an orchestrator:
 ```ts
 // api/runner.ts
 import { createHttpRunner } from "@runners/http";
-import * as tests from "../tests";
+import * as runners from "../runners";
 
 const region = process.env.RUNNER_REGION || "eu-west-1";
 
 export const handler = createHttpRunner({
-  tests,
+  runners,
   region,
 });
 ```
@@ -232,7 +232,7 @@ export const handler = createHttpRunner({
 ```json
 {
   "url": "https://example.com",
-  "tests": ["cookieBannerVisibleTest"],
+  "runners": ["cookieBannerVisibleTest"],
   "runId": "optional-run-id"
 }
 ```
@@ -284,7 +284,7 @@ export default withRunners(nextConfig);
 This will:
 
 * register an API route such as `/api/runner`
-* load tests from your `tests/` directory
+* load runners from your `runners/` directory
 * use the current deployment region (or a `RUNNER_REGION` env variable) in the context
 
 You can then point your orchestrator at:
@@ -295,7 +295,7 @@ Content-Type: application/json
 
 {
   "url": "https://example.com",
-  "tests": ["cookieBannerVisibleTest"],
+  "runners": ["cookieBannerVisibleTest"],
   "runId": "my-run-id"
 }
 ```
@@ -322,7 +322,7 @@ export default defineConfig({
 The `runner/nitro` module will:
 
 * register a runner endpoint (for example `/api/runner`)
-* wire in your `tests/` directory
+* wire in your `runners/` directory
 * attach region and run metadata to the context
 
 Your Hono app then focuses purely on your normal routes, while the runner endpoint is handled by the adapter.
@@ -334,12 +334,12 @@ Your Hono app then focuses purely on your normal routes, while the runner endpoi
 You can also use `runners` directly from Node without HTTP or the CLI:
 
 ```ts
-import { runTests } from "runner/core";
-import * as tests from "./tests";
+import { runRunners } from "runners";
+import * as runners from "./runners";
 
-const result = await runTests({
+const result = await runRunners({
   url: "https://example.com",
-  tests: [tests.cookieBannerVisibleTest],
+  runners: [runners.cookieBannerVisibleTest],
   region: "eu-west-1",
   runId: "local-dev",
 });
@@ -354,23 +354,23 @@ console.log(result.results);
 The main public types are:
 
 ```ts
-import type { RunnerTest, RunnerTestContext, RunnerTestResult } from "runner";
+import type { Runner, RunnerContext, RunnerResult } from "runners";
 ```
 
 Roughly:
 
 ```ts
-type TestStatus = "pass" | "fail" | "error";
+type RunStatus = "pass" | "fail" | "error";
 
-type RunnerTestResult = {
+type RunnerResult = {
   name: string;
-  status: TestStatus;
+  status: RunStatus;
   details?: Record<string, unknown>;
   errorMessage?: string;
   durationMs?: number;
 };
 
-type RunnerTest = (ctx: RunnerTestContext) => Promise<RunnerTestResult>;
+type Runner = (ctx: RunnerContext) => Promise<RunnerResult>;
 ```
 
 The exact shape may grow with more metadata, but this is the core.
@@ -381,7 +381,7 @@ The exact shape may grow with more metadata, but this is the core.
 
 This project **is**:
 
-* a small SDK for defining Playwright based tests as pure functions
+* a small SDK for defining Playwright based runners as pure functions
 * a runner harness that hides browser and container details
 * a thin HTTP and CLI surface around that runner
 
@@ -401,8 +401,8 @@ Planned for early versions:
 
 * [x] Basic Playwright based runner ✅
 * [x] CLI with `run` command and config file ✅
-* [ ] HTTP handler helper for API based runners
-* [x] Simple test discovery in a `tests/` folder ✅
+* [x] HTTP handler helper for API based runners ✅
+* [x] Simple runner discovery in a `runners/` folder ✅
 * [x] Minimal logging hooks ✅
 * [ ] Examples with multi region deployment
 

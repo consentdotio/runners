@@ -1,14 +1,14 @@
-export type TestStatus = "pass" | "fail" | "error";
+export type RunStatus = "pass" | "fail" | "error";
 
-export type RunnerTestResult = {
+export type RunnerResult = {
   name: string;
-  status: TestStatus;
+  status: RunStatus;
   details?: Record<string, unknown>;
   errorMessage?: string;
   durationMs?: number;
 };
 
-export type RunnerTestContext = {
+export type RunnerContext = {
   page: import("playwright").Page;
   url: string;
   region?: string;
@@ -16,19 +16,19 @@ export type RunnerTestContext = {
   log: (message: string, meta?: Record<string, unknown>) => void;
 };
 
-export type RunnerTest = (ctx: RunnerTestContext) => Promise<RunnerTestResult>;
+export type Runner = (ctx: RunnerContext) => Promise<RunnerResult>;
 
-export type RunTestsOptions = {
+export type RunRunnersOptions = {
   url: string;
-  tests: RunnerTest[];
+  runners: Runner[];
   region?: string;
   runId?: string;
   timeout?: number;
 };
 
-export type RunTestsResult = {
+export type RunRunnersResult = {
   url: string;
   region?: string;
   runId?: string;
-  results: RunnerTestResult[];
+  results: RunnerResult[];
 };

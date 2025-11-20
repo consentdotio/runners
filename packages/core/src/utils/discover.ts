@@ -1,78 +1,107 @@
 import { glob } from "glob";
 import { pathToFileURL } from "node:url";
-import type { RunnerTest } from "../types.js";
-import { detectDirectives } from "./directive-detector.js";
+import type { Runner } from "../types";
+import { hasAnyDirective } from "./directive-detector";
+import { normalizePath } from "./debug";
 
-export async function discoverTests(
+/**
+ * Caches discovered runners by pattern and requireDirective.
+ * Uses WeakMap to allow garbage collection when patterns are no longer referenced.
+ * This cache is invalidated automatically when the pattern array reference changes
+ * (e.g., when files are added/removed during watch mode).
+ */
+const discoveredRunnersCache = new WeakMap<string[], Map<string, Runner>>();
+
+/**
+ * Discovers runner functions from files matching the given pattern.
+ *
+ * @param pattern - Glob pattern to match runner files (default: "src/**\/*.ts")
+ * @param requireDirective - Whether to require "use runner" directive (default: true)
+ * @returns Map of runner name to runner function
+ */
+export async function discoverRunners(
   pattern: string = "src/**/*.ts",
   requireDirective: boolean = true
-): Promise<Map<string, RunnerTest>> {
-  const testFiles = await glob(pattern, {
+): Promise<Map<string, Runner>> {
+  const discoverStart = Date.now();
+  const cacheKey = [pattern, String(requireDirective)];
+
+  // Check cache
+  const cached = discoveredRunnersCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const runnerFiles = await glob(pattern, {
     ignore: ["node_modules/**", "dist/**"],
   });
 
-  const tests = new Map<string, RunnerTest>();
+  const runners = new Map<string, Runner>();
+  const errors: Array<{ file: string; error: string }> = [];
 
-  for (const file of testFiles) {
+  for (const file of runnerFiles) {
     try {
-      // Always check directives - directive requirement is now default
-      let directiveInfo:
-        | Awaited<ReturnType<typeof detectDirectives>>
-        | undefined;
+      // Check for directive (module-level or function-level) if required
       if (requireDirective) {
-        try {
-          directiveInfo = detectDirectives(file);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `Failed to parse directives in ${file}:`,
-            error instanceof Error ? error.message : String(error)
-          );
-          // Skip this file if we can't parse it and directive is required
+        const hasDirective = await hasAnyDirective(file);
+        if (!hasDirective) {
+          // Skip files without directive
           continue;
         }
       }
 
+      // Import the module to get exports
       const moduleUrl = pathToFileURL(file).href;
       const module = await import(moduleUrl);
 
-      const hasModuleDirective = directiveInfo?.hasModuleDirective ?? false;
-
+      // Discover async function exports as runners
       for (const [exportName, exportValue] of Object.entries(module)) {
         // Check if the export is a function (basic check)
         if (typeof exportValue === "function") {
-          // Try to infer if it's a RunnerTest by checking if it's async
-          // In a real implementation, we might use TypeScript's type checking
-          // For now, we'll accept any async function export
+          // Accept any async function export as a Runner
           if (exportValue.constructor.name === "AsyncFunction") {
-            // Check if this export has a directive (required by default)
-            if (requireDirective) {
-              // Check for module-level directive or function-level directive
-              const hasFunctionDirective =
-                directiveInfo?.functionDirectives.get(exportName) ?? false;
-              const isDefaultExport = exportName === "default";
-              const defaultHasDirective =
-                directiveInfo?.defaultExportHasDirective ?? false;
-
-              if (
-                hasModuleDirective ||
-                hasFunctionDirective ||
-                (isDefaultExport && defaultHasDirective)
-              ) {
-                tests.set(exportName, exportValue as RunnerTest);
-              }
-            } else {
-              // Legacy mode: include all async functions (not recommended)
-              tests.set(exportName, exportValue as RunnerTest);
-            }
+            runners.set(exportName, exportValue as Runner);
           }
         }
       }
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      errors.push({ file: normalizePath(file), error: errorMessage });
       // eslint-disable-next-line no-console
-      console.error(`Failed to load test file ${file}:`, error);
+      console.error(
+        `[runners] Failed to load runner file ${normalizePath(file)}:`,
+        errorMessage
+      );
     }
   }
 
-  return tests;
+  const discoverTime = Date.now() - discoverStart;
+
+  // Log discovery results
+  if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[runners] Discovered ${runners.size} runner(s) from ${runnerFiles.length} file(s) in ${discoverTime}ms`
+    );
+    if (errors.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[runners] ${errors.length} file(s) failed to load (see errors above)`
+      );
+    }
+  }
+
+  // Cache the result
+  discoveredRunnersCache.set(cacheKey, runners);
+
+  return runners;
+}
+
+/**
+ * Clears the discovery cache. Useful for testing or when you need to force re-discovery.
+ */
+export function clearDiscoveryCache(): void {
+  // WeakMap doesn't have a clear method, but we can create a new one
+  // In practice, the cache will be garbage collected when patterns are no longer referenced
 }

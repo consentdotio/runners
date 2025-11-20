@@ -1,11 +1,15 @@
 import type { Nitro, NitroModule } from "nitro/types";
-import { discoverTests } from "runners";
+import { join } from "pathe";
+import { LocalBuilder } from "./builders";
+import type { ModuleOptions } from "./types";
+
 export type { ModuleOptions } from "./types";
 
 export default {
   name: "runners/nitro",
+  // biome-ignore lint/suspicious/useAwait: nitro.options is not typed
   async setup(nitro: Nitro) {
-    const options: ModuleOptions = nitro.options.runners || {};
+    const options = (nitro.options as ModuleOptions).runners || {};
     // Default patterns: scan both src/** and runners/**
     let patterns: string[];
     if (options.pattern) {
@@ -17,106 +21,97 @@ export default {
     }
     const region = options.region || process.env.RUNNER_REGION;
 
-    // Discover tests to validate they can be found
-    async function initializeRunner() {
-      try {
-        // Discover tests from all patterns and merge results
-        const allTests = new Map<string, import("runners").RunnerTest>();
-        for (const pattern of patterns) {
-          const testsMap = await discoverTests(pattern);
-          // Merge into allTests, overwriting duplicates (later patterns take precedence)
-          for (const [name, test] of testsMap) {
-            allTests.set(name, test);
-          }
-        }
-        const tests = Object.fromEntries(allTests);
-        console.log(
-          `[runners/nitro] Discovered ${Object.keys(tests).length} test(s) from patterns: ${patterns.join(", ")}`
-        );
-      } catch (error) {
-        console.error("[runners/nitro] Failed to discover tests:", error);
-      }
+    const builder = new LocalBuilder(nitro, patterns);
+    const outDir = join(nitro.options.buildDir, "runners");
+
+    // NOTE: Externalize .nitro/runners to prevent dev reloads
+    if (nitro.options.dev) {
+      nitro.options.externals ||= {};
+      nitro.options.externals.external ||= [];
+      nitro.options.externals.external.push((id) => id.startsWith(outDir));
     }
 
-    // Initialize runner on setup
-    await initializeRunner();
+    // Build runners bundle on build:before hook
+    nitro.hooks.hook("build:before", async () => {
+      if (nitro.options.dev) {
+        // Start watch mode for incremental rebuilds
+        await builder.watch();
+      } else {
+        // One-time build for production
+        await builder.build();
+      }
+    });
 
-    // Re-initialize on dev reload
+    // Allows for HMR - rebuild on dev reload
     if (nitro.options.dev) {
       nitro.hooks.hook("dev:reload", async () => {
-        await initializeRunner();
+        // Watch mode handles incremental rebuilds automatically
+        // No need to rebuild manually
       });
     }
+
+    // Create virtual handler that imports the bundled runners
+    addVirtualHandler(nitro, "/api/runner", "runners/handler", region);
 
     // Add handler for /api/runner
     nitro.options.handlers.push({
       route: "/api/runner",
       handler: "#runners/handler",
     });
-
-    // Create virtual handler that uses the discovered tests
-    nitro.options.virtual["#runners/handler"] = /* js */ `
-      import { createHttpRunner } from '@runners/http';
-      import { discoverTests } from 'runners';
-
-      let handler = null;
-      const patterns = ${JSON.stringify(patterns)};
-      const region = ${region ? JSON.stringify(region) : "undefined"};
-
-      async function initialize() {
-        try {
-          // Discover tests from all patterns and merge results
-          const allTests = new Map();
-          for (const pattern of patterns) {
-            const testsMap = await discoverTests(pattern);
-            for (const [name, test] of testsMap) {
-              allTests.set(name, test);
-            }
-          }
-          const tests = Object.fromEntries(allTests);
-          handler = createHttpRunner({
-            tests,
-            region,
-          });
-        } catch (error) {
-          console.error('[runners/nitro] Failed to initialize:', error);
-          handler = async () => {
-            return new Response(
-              JSON.stringify({
-                error: 'Failed to initialize runner',
-                details: error.message,
-              }),
-              {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
-          };
-        }
-      }
-
-      await initialize();
-
-      export default async ({ req }) => {
-        if (!handler) {
-          await initialize();
-        }
-        try {
-          return await handler(req);
-        } catch (error) {
-          console.error('[runners/nitro] Handler error:', error);
-          return new Response(
-            JSON.stringify({
-              error: 'Internal server error',
-              details: error.message,
-            }),
-            {
-              status: 500,
-              headers: { 'Content-Type': 'application/json' },
-            }
-          );
-        }
-      };
-    `;
   },
 } satisfies NitroModule;
+
+function addVirtualHandler(
+  nitro: Nitro,
+  _route: string,
+  virtualKey: string,
+  region?: string
+) {
+  // The actual runners bundle is at runners/runners.mjs
+  const runnersBundlePath = join(nitro.options.buildDir, "runners/runners.mjs");
+
+  if (!nitro.routing) {
+    // Nitro v2 (legacy)
+    nitro.options.virtual[`#${virtualKey}`] = /* js */ `
+    import { fromWebHandler } from "h3";
+    import { createHttpRunner } from '@runners/http';
+    import { runners } from "${runnersBundlePath}";
+    
+    const handler = createHttpRunner({
+      runners,
+      region: ${region ? JSON.stringify(region) : "undefined"},
+    });
+    
+    export default fromWebHandler(handler);
+  `;
+  } else {
+    // Nitro v3+ (native web handlers)
+    nitro.options.virtual[`#${virtualKey}`] = /* js */ `
+    import { createHttpRunner } from '@runners/http';
+    import { runners } from "${runnersBundlePath}";
+    
+    const handler = createHttpRunner({
+      runners,
+      region: ${region ? JSON.stringify(region) : "undefined"},
+    });
+    
+    export default async ({ req }) => {
+      try {
+        return await handler(req);
+      } catch (error) {
+        console.error('[runners/nitro] Handler error:', error);
+        return new Response(
+          JSON.stringify({
+            error: 'Internal server error',
+            details: error.message,
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    };
+  `;
+  }
+}

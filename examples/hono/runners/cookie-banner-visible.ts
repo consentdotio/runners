@@ -1,8 +1,9 @@
-import type { RunnerTest } from 'runners';
 
-export const cookieBannerVisibleTest: RunnerTest = async (ctx) => {
-  'use runner';
 
+import type { Runner } from 'runners';
+
+export const cookieBannerVisibleTest: Runner = async (ctx) => {
+'use runner';
   const { page, url, region, log } = ctx;
 
   log('Checking cookie banner', { url, region });

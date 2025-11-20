@@ -1,7 +1,7 @@
-import type { RunnerTest } from 'runners';
+import type { Runner } from 'runners';
 
 // Function-level directive - each function has its own directive
-export const testWithDirective: RunnerTest = async (ctx) => {
+export const testWithDirective: Runner = async (ctx) => {
   'use runner';
 
   const { page, url, log } = ctx;
@@ -13,7 +13,7 @@ export const testWithDirective: RunnerTest = async (ctx) => {
   };
 };
 
-export const testWithoutDirective: RunnerTest = async (ctx) => {
+export const testWithoutDirective: Runner = async (ctx) => {
   // This function doesn't have the directive
   const { page, url, log } = ctx;
   log('Test without directive', { url });

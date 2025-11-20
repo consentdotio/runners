@@ -1,6 +1,7 @@
-import type { RunnerTest } from 'runners';
 
-export const testFromRunnersDir: RunnerTest = async (ctx) => {
+import type { Runner } from 'runners';
+
+export const testFromRunnersDir: Runner = async (ctx) => {
   'use runner';
   const { page, log } = ctx;
   log('Test from runners/ directory');

@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "nitro dev",
     "build": "nitro build",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src"
   },
   "dependencies": {
     "@runners/http": "workspace:*",

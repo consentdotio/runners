@@ -2,20 +2,26 @@
   "name": "@runners/config",
   "version": "0.0.0",
   "description": "Configuration support for runners",
+  "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
-  "license": "MIT",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "rslib build",
     "clean": "tsc --build --clean && rm -r dist ||:",
-    "typecheck": "tsc --noEmit",
+    "dev": "rslib build --watch",
     "fmt": "pnpm biome format --write .",
-    "lint": "pnpm biome lint ./src"
+    "lint": "pnpm biome lint ./src",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "zod": "catalog:"

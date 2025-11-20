@@ -1,4 +1,4 @@
-import type { RunnerTestContext } from "./types.js";
+import type { RunnerContext } from "./types";
 
 export function createContext(
   page: import("playwright").Page,
@@ -7,7 +7,7 @@ export function createContext(
     region?: string;
     runId?: string;
   }
-): RunnerTestContext {
+): RunnerContext {
   const log = (message: string, meta?: Record<string, unknown>) => {
     const timestamp = new Date().toISOString();
     const logEntry = {
