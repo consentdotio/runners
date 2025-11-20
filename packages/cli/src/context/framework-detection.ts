@@ -1,7 +1,7 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import fs from "node:fs/promises";
+import path from "node:path";
 
-import type { CliLogger } from '~/utils/logger';
+import type { CliLogger } from "~/utils/logger";
 
 /**
  * Framework detection result
@@ -27,51 +27,51 @@ export async function detectFramework(
 ): Promise<FrameworkDetectionResult> {
   try {
     logger?.debug(`Detecting framework in ${projectRoot}`);
-    const packageJsonPath = path.join(projectRoot, 'package.json');
-    const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+    const packageJsonPath = path.join(projectRoot, "package.json");
+    const packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf-8"));
     const deps = {
       ...packageJson.dependencies,
       ...packageJson.devDependencies,
     };
 
-    const hasReact = 'react' in deps;
+    const hasReact = "react" in deps;
     const reactVersion = hasReact ? deps.react : null;
     logger?.debug(
-      `React detected: ${hasReact}${reactVersion ? ` (version: ${reactVersion})` : ''}`
+      `React detected: ${hasReact}${reactVersion ? ` (version: ${reactVersion})` : ""}`
     );
 
     let framework: string | null = null;
     let frameworkVersion: string | null = null;
-    let pkg = 'unknown';
+    let pkg = "unknown";
 
-    if ('next' in deps) {
-      framework = 'Next.js';
+    if ("next" in deps) {
+      framework = "Next.js";
       frameworkVersion = deps.next;
-      pkg = 'next';
-    } else if ('@remix-run/react' in deps) {
-      framework = 'Remix';
-      frameworkVersion = deps['@remix-run/react'];
-      pkg = 'remix';
+      pkg = "next";
+    } else if ("@remix-run/react" in deps) {
+      framework = "Remix";
+      frameworkVersion = deps["@remix-run/react"];
+      pkg = "remix";
     } else if (
-      '@vitejs/plugin-react' in deps ||
-      '@vitejs/plugin-react-swc' in deps
+      "@vitejs/plugin-react" in deps ||
+      "@vitejs/plugin-react-swc" in deps
     ) {
-      framework = 'Vite + React';
+      framework = "Vite + React";
       frameworkVersion =
-        deps['@vitejs/plugin-react'] || deps['@vitejs/plugin-react-swc'];
-      pkg = 'vite';
-    } else if ('gatsby' in deps) {
-      framework = 'Gatsby';
+        deps["@vitejs/plugin-react"] || deps["@vitejs/plugin-react-swc"];
+      pkg = "vite";
+    } else if ("gatsby" in deps) {
+      framework = "Gatsby";
       frameworkVersion = deps.gatsby;
-      pkg = 'gatsby';
+      pkg = "gatsby";
     } else if (hasReact) {
-      framework = 'React';
+      framework = "React";
       frameworkVersion = reactVersion;
-      pkg = 'react';
+      pkg = "react";
     }
 
     logger?.debug(
-      `Detected framework: ${framework}${frameworkVersion ? ` (version: ${frameworkVersion})` : ''}, ` +
+      `Detected framework: ${framework}${frameworkVersion ? ` (version: ${frameworkVersion})` : ""}, ` +
         `package: ${pkg}`
     );
     return { framework, frameworkVersion, pkg, hasReact, reactVersion };
@@ -82,7 +82,7 @@ export async function detectFramework(
     return {
       framework: null,
       frameworkVersion: null,
-      pkg: 'unknown',
+      pkg: "unknown",
       hasReact: false,
       reactVersion: null,
     };
@@ -103,7 +103,7 @@ export async function detectProjectRoot(
   let currentDir = cwd;
 
   while (currentDir !== path.dirname(currentDir)) {
-    const packageJsonPath = path.join(currentDir, 'package.json');
+    const packageJsonPath = path.join(currentDir, "package.json");
     try {
       await fs.access(packageJsonPath);
       logger?.debug(`Found project root at: ${currentDir}`);
@@ -117,4 +117,3 @@ export async function detectProjectRoot(
   logger?.debug(`No package.json found, using cwd as project root: ${cwd}`);
   return cwd;
 }
-

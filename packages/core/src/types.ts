@@ -1,4 +1,4 @@
-export type TestStatus = 'pass' | 'fail' | 'error';
+export type TestStatus = "pass" | "fail" | "error";
 
 export type RunnerTestResult = {
   name: string;
@@ -9,7 +9,7 @@ export type RunnerTestResult = {
 };
 
 export type RunnerTestContext = {
-  page: import('playwright').Page;
+  page: import("playwright").Page;
   url: string;
   region?: string;
   runId?: string;

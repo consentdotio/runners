@@ -1,7 +1,7 @@
-import { runTests, type RunnerTestResult } from 'runners';
-import { defineConfig } from '@runners/config';
-import { loadTests } from '../../utils/load-tests.js';
-import type { CliContext } from '../../context/types.js';
+import { runTests, type RunnerTestResult } from "runners";
+import { defineConfig } from "@runners/config";
+import { loadTests } from "../../utils/load-tests.js";
+import type { CliContext } from "../../context/types.js";
 
 export async function run(context: CliContext): Promise<void> {
   const { logger, flags, commandArgs, error: errorHandler } = context;
@@ -21,9 +21,9 @@ export async function run(context: CliContext): Promise<void> {
 
   if (configPath) {
     // Load config from file
-    const { pathToFileURL } = await import('node:url');
-    const { resolve } = await import('node:path');
-    const resolvedPath = configPath.startsWith('/')
+    const { pathToFileURL } = await import("node:url");
+    const { resolve } = await import("node:path");
+    const resolvedPath = configPath.startsWith("/")
       ? configPath
       : resolve(context.cwd, configPath);
     const configUrl = pathToFileURL(resolvedPath).href;
@@ -34,8 +34,8 @@ export async function run(context: CliContext): Promise<void> {
     // Use CLI options
     if (!url) {
       errorHandler.handleError(
-        new Error('--url is required when --config is not provided'),
-        'Missing required option'
+        new Error("--url is required when --config is not provided"),
+        "Missing required option"
       );
       // handleError never returns, but TypeScript needs this for type narrowing
       return;
@@ -47,18 +47,22 @@ export async function run(context: CliContext): Promise<void> {
     };
   }
 
+  // Directives are now required by default
   const testFunctions = await loadTests(
-    config.tests.length > 0 ? config.tests : undefined
+    config.tests.length > 0 ? config.tests : undefined,
+    true
   );
 
   if (testFunctions.length === 0) {
     logger.error(
-      'No tests found. Make sure you have test files in tests/**/*.ts'
+      'No tests found. Make sure you have test files with "use runner" directive in src/**/*.ts'
     );
     process.exit(1);
   }
 
-  logger.info(`Running ${testFunctions.length} test(s) against ${config.url}...`);
+  logger.info(
+    `Running ${testFunctions.length} test(s) against ${config.url}...`
+  );
 
   const result = await runTests({
     url: config.url,
@@ -67,19 +71,18 @@ export async function run(context: CliContext): Promise<void> {
   });
 
   // Print results
-  logger.message('\nResults:');
+  logger.message("\nResults:");
   logger.message(JSON.stringify(result, null, 2));
 
   // Exit with non-zero if any test failed
   const hasFailures = result.results.some(
-    (r: RunnerTestResult) => r.status === 'fail' || r.status === 'error'
+    (r: RunnerTestResult) => r.status === "fail" || r.status === "error"
   );
 
   if (hasFailures) {
-    logger.error('Some tests failed');
+    logger.error("Some tests failed");
     process.exit(1);
   } else {
-    logger.success('All tests passed!');
+    logger.success("All tests passed!");
   }
 }
-

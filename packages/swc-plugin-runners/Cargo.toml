@@ -1,0 +1,20 @@
+[package]
+name = "swc_plugin_runners"
+version = "0.1.0"
+edition = "2021"
+authors = ["Runners Contributors"]
+license = "MIT"
+publish = false
+description = "SWC plugin for transforming 'use runner' directives"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = true
+
+[dependencies]
+serde = "=1.0.219"
+serde_json = "1"
+swc_core = { version = "26", features = ["ecma_plugin_transform"] }
+

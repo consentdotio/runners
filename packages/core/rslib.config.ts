@@ -1,24 +1,24 @@
-import { defineConfig } from '@rslib/core';
+import { defineConfig } from "@rslib/core";
 
 export default defineConfig({
   source: {
     entry: {
-      index: './src/index.ts',
-      'cli': './src/cli.ts',
+      index: "./src/index.ts",
+      cli: "./src/cli.ts",
     },
   },
   lib: [
     {
       bundle: true,
       dts: true,
-      format: 'esm',
+      format: "esm",
     },
   ],
   output: {
-    target: 'node',
+    target: "node",
     cleanDistPath: true,
     filename: {
-      js: '[name].mjs',
+      js: "[name].mjs",
     },
   },
 });

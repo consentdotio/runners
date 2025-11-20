@@ -13,7 +13,9 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "tsc --build --clean && rm -r dist ||:",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src"
   },
   "dependencies": {
     "zod": "catalog:"

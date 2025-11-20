@@ -1,0 +1,5 @@
+# Build aliases for WASM targets
+[alias]
+# Alias to build plugin binary for wasm32-unknown-unknown target
+build-wasm32 = "build --release --target wasm32-unknown-unknown"
+

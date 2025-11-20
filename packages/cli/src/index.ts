@@ -1,24 +1,27 @@
 #!/usr/bin/env node
 
-import * as p from '@clack/prompts';
-import color from 'picocolors';
-import { showHelpMenu } from './actions/show-help-menu';
-import { displayIntro } from './components/intro';
-import { run } from './commands/run';
+import * as p from "@clack/prompts";
+import { showHelpMenu } from "./actions/show-help-menu";
+import { displayIntro } from "./components/intro";
+import { run } from "./commands/run";
 
 // Import context creator and types
-import { createCliContext } from './context/creator';
-import { globalFlags } from './context/parser';
-import type { CliCommand } from './context/types';
-import { formatLogMessage } from './utils/logger';
+import { createCliContext } from "./context/creator";
+import { globalFlags } from "./context/parser";
+import type { CliCommand } from "./context/types";
+import { formatLogMessage } from "./utils/logger";
+
+// Export utilities for programmatic use
+export { discoverTests } from "runners";
+export { loadTests } from "./utils/load-tests.js";
 
 // Define commands (using types from context)
 const commands: CliCommand[] = [
   {
-    name: 'run',
-    label: 'Run',
-    hint: 'Run tests',
-    description: 'Run tests against a URL',
+    name: "run",
+    label: "Run",
+    hint: "Run tests",
+    description: "Run tests against a URL",
     action: (context) => run(context),
   },
 ];
@@ -36,22 +39,22 @@ export async function main() {
   const version = packageInfo.version;
 
   if (flags.version) {
-    logger.debug('Version flag detected');
+    logger.debug("Version flag detected");
     logger.message(`CLI version ${version}`);
     process.exit(0);
   }
 
   if (flags.help) {
-    logger.debug('Help flag detected. Displaying help and exiting.');
+    logger.debug("Help flag detected. Displaying help and exiting.");
     showHelpMenu(context, version, commands, globalFlags);
     process.exit(0);
   }
 
   // --- Regular Execution Flow ---
-  logger.debug('Raw process arguments:', process.argv);
-  logger.debug('Parsed command name:', commandName);
-  logger.debug('Parsed command args:', commandArgs);
-  logger.debug('Parsed global flags:', flags);
+  logger.debug("Raw process arguments:", process.argv);
+  logger.debug("Parsed command name:", commandName);
+  logger.debug("Parsed command args:", commandArgs);
+  logger.debug("Parsed global flags:", flags);
 
   // Display intro
   await displayIntro(context, version);
@@ -65,11 +68,11 @@ export async function main() {
         await command.action(context);
       } else {
         logger.error(`Unknown command: ${commandName}`);
-        logger.info('Run --help to see available commands.');
+        logger.info("Run --help to see available commands.");
         process.exit(1);
       }
     } else {
-      logger.debug('No command specified, entering interactive selection.');
+      logger.debug("No command specified, entering interactive selection.");
 
       const promptOptions = commands.map((cmd) => ({
         value: cmd.name,
@@ -77,21 +80,24 @@ export async function main() {
         hint: cmd.hint,
       }));
       promptOptions.push({
-        value: 'exit',
-        label: 'exit',
-        hint: 'Close the CLI',
+        value: "exit",
+        label: "exit",
+        hint: "Close the CLI",
       });
 
       const selectedCommandName = await p.select({
-        message: formatLogMessage('info', 'Which command would you like to run?'),
+        message: formatLogMessage(
+          "info",
+          "Which command would you like to run?"
+        ),
         options: promptOptions,
       });
 
-      if (p.isCancel(selectedCommandName) || selectedCommandName === 'exit') {
-        logger.debug('Interactive selection cancelled or exit chosen.');
-        context.error.handleCancel('Operation cancelled.', {
-          command: 'interactive_menu',
-          stage: 'exit',
+      if (p.isCancel(selectedCommandName) || selectedCommandName === "exit") {
+        logger.debug("Interactive selection cancelled or exit chosen.");
+        context.error.handleCancel("Operation cancelled.", {
+          command: "interactive_menu",
+          stage: "exit",
         });
       } else {
         const selectedCommand = commands.find(
@@ -103,16 +109,16 @@ export async function main() {
         } else {
           error.handleError(
             new Error(`Command '${selectedCommandName}' not found`),
-            'An internal error occurred'
+            "An internal error occurred"
           );
         }
       }
     }
-    logger.debug('Command execution completed');
+    logger.debug("Command execution completed");
   } catch (executionError) {
     error.handleError(
       executionError,
-      'An unexpected error occurred during command execution'
+      "An unexpected error occurred during command execution"
     );
   }
 }

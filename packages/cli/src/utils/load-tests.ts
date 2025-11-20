@@ -1,8 +1,11 @@
-import type { RunnerTest } from 'runners';
-import { discoverTests } from './discover.js';
+import type { RunnerTest } from "runners";
+import { discoverTests } from "runners";
 
-export async function loadTests(testNames?: string[]): Promise<RunnerTest[]> {
-  const allTests = await discoverTests();
+export async function loadTests(
+  testNames?: string[],
+  requireDirective: boolean = true
+): Promise<RunnerTest[]> {
+  const allTests = await discoverTests(undefined, requireDirective);
 
   if (!testNames || testNames.length === 0) {
     return Array.from(allTests.values());
@@ -14,7 +17,7 @@ export async function loadTests(testNames?: string[]): Promise<RunnerTest[]> {
     const test = allTests.get(name);
     if (!test) {
       throw new Error(
-        `Test "${name}" not found. Available tests: ${Array.from(allTests.keys()).join(', ')}`
+        `Test "${name}" not found. Available tests: ${Array.from(allTests.keys()).join(", ")}`
       );
     }
     selectedTests.push(test);
@@ -22,4 +25,3 @@ export async function loadTests(testNames?: string[]): Promise<RunnerTest[]> {
 
   return selectedTests;
 }
-

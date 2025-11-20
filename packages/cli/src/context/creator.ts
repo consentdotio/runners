@@ -2,14 +2,14 @@ import {
   createCliLogger,
   type LogLevel,
   validLogLevels,
-} from '../utils/logger';
-import { createErrorHandlers } from './error-handlers';
-import { createFileSystem } from './file-system';
-import { detectFramework, detectProjectRoot } from './framework-detection';
-import { detectPackageManager } from './package-manager-detection';
-import { parseCliArgs } from './parser';
-import type { CliCommand, CliContext } from './types';
-import { createUserInteraction } from './user-interaction';
+} from "../utils/logger";
+import { createErrorHandlers } from "./error-handlers";
+import { createFileSystem } from "./file-system";
+import { detectFramework, detectProjectRoot } from "./framework-detection";
+import { detectPackageManager } from "./package-manager-detection";
+import { parseCliArgs } from "./parser";
+import type { CliCommand, CliContext } from "./types";
+import { createUserInteraction } from "./user-interaction";
 
 /**
  * Parses arguments, creates the logger, and returns the application context.
@@ -29,10 +29,10 @@ export async function createCliContext(
     commands
   );
 
-  let desiredLogLevel: LogLevel = 'info';
+  let desiredLogLevel: LogLevel = "info";
   const levelArg = parsedFlags.logger;
 
-  if (typeof levelArg === 'string') {
+  if (typeof levelArg === "string") {
     if ((validLogLevels as string[]).includes(levelArg)) {
       desiredLogLevel = levelArg as LogLevel;
     } else {
@@ -83,12 +83,12 @@ export async function createCliContext(
   context.config = {
     loadConfig: async () => null,
     requireConfig: async () => {
-      throw new Error('Config not implemented');
+      throw new Error("Config not implemented");
     },
     getPathAliases: () => null,
   };
 
-  logger.debug('CLI context fully initialized with all utilities');
+  logger.debug("CLI context fully initialized with all utilities");
 
   return context;
 }

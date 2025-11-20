@@ -18,7 +18,8 @@
     "build": "rslib build",
     "check-types": "tsc --noEmit",
     "dev": "rslib build --watch",
-    "fmt": "pnpm biome format --write . && pnpm biome check --formatter-enabled=false --linter-enabled=false --write",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src",
     "knip": "knip",
     "lint": "pnpm biome lint ./src",
     "start": "node ./dist/index.mjs",
@@ -33,6 +34,7 @@
     "glob": "^11.0.0",
     "package-manager-detector": "^1.3.0",
     "picocolors": "^1.1.1",
+    "typescript": "catalog:",
     "zod": "^3.24.2"
   },
   "devDependencies": {

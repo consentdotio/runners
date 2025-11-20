@@ -1,12 +1,12 @@
-import { detect } from 'package-manager-detector/detect';
-import type { CliLogger } from '~/utils/logger';
+import { detect } from "package-manager-detector/detect";
+import type { CliLogger } from "~/utils/logger";
 
-export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
+export type PackageManager = "npm" | "yarn" | "pnpm" | "bun";
 export const SUPPORTED_PACKAGE_MANAGERS: PackageManager[] = [
-  'npm',
-  'yarn',
-  'pnpm',
-  'bun',
+  "npm",
+  "yarn",
+  "pnpm",
+  "bun",
 ];
 export interface PackageManagerResult {
   name: PackageManager;
@@ -23,7 +23,7 @@ async function getPackageManagerVersion(
   pm: PackageManager
 ): Promise<string | null> {
   try {
-    const { execSync } = await import('node:child_process');
+    const { execSync } = await import("node:child_process");
     const version = execSync(`${pm} --version`).toString().trim();
     return version;
   } catch {
@@ -43,7 +43,7 @@ export async function detectPackageManager(
   logger?: CliLogger
 ): Promise<PackageManagerResult> {
   try {
-    logger?.debug('Detecting package manager');
+    logger?.debug("Detecting package manager");
 
     // First check for monorepo package manager
     const pm = await detect({
@@ -51,7 +51,7 @@ export async function detectPackageManager(
     });
 
     if (!pm) {
-      throw new Error('No package manager detected');
+      throw new Error("No package manager detected");
     }
 
     logger?.debug(`Detected package manager: ${pm.name}`);
@@ -73,10 +73,9 @@ export async function detectPackageManager(
   }
 
   // Default to npm if detection fails
-  logger?.debug('Defaulting to npm');
+  logger?.debug("Defaulting to npm");
   return {
-    name: 'npm',
-    version: await getPackageManagerVersion('npm'),
+    name: "npm",
+    version: await getPackageManagerVersion("npm"),
   };
 }
-

@@ -1,6 +1,6 @@
-import type { CliLogger } from '../utils/logger';
-import type { FrameworkDetectionResult } from './framework-detection';
-import type { PackageManagerResult } from './package-manager-detection';
+import type { CliLogger } from "../utils/logger";
+import type { FrameworkDetectionResult } from "./framework-detection";
+import type { PackageManagerResult } from "./package-manager-detection";
 
 // --- Command Definition ---
 export interface CliCommand {
@@ -13,7 +13,7 @@ export interface CliCommand {
 }
 
 // --- Flag Definition ---
-export type FlagType = 'boolean' | 'string' | 'special'; // 'special' for help/version
+export type FlagType = "boolean" | "string" | "special"; // 'special' for help/version
 
 export interface CliFlag {
   names: string[]; // e.g., ['--help', '-h']
@@ -61,7 +61,7 @@ export interface FileSystemUtils {
 // --- CLI Context Definition ---
 export interface CliContext {
   logger: CliLogger;
-  flags: ParsedArgs['parsedFlags'];
+  flags: ParsedArgs["parsedFlags"];
   commandName: string | undefined;
   commandArgs: string[];
   cwd: string;

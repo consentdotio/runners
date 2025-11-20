@@ -1,7 +1,7 @@
-import type { RunnerTestContext } from './types.js';
+import type { RunnerTestContext } from "./types.js";
 
 export function createContext(
-  page: import('playwright').Page,
+  page: import("playwright").Page,
   url: string,
   options: {
     region?: string;

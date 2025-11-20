@@ -5,7 +5,7 @@ A small SDK for writing Playwright tests that can be executed by an API orchestr
 You write tiny test functions:
 
 ```ts
-// tests/cookie-banner-visible.ts
+// src/runners/cookie-banner-visible.ts
 import type { RunnerTest } from "runners";
 
 export const cookieBannerVisibleTest: RunnerTest = async (ctx) => {
@@ -94,10 +94,10 @@ Anything that:
 
 ## Writing your first test
 
-Create a file in `tests/`:
+Create a file anywhere in `src/`:
 
 ```ts
-// tests/example-title-visible.ts
+// src/runners/example-title-visible.ts
 import type { RunnerTest } from "runner";
 
 export const exampleTitleVisibleTest: RunnerTest = async (ctx) => {
@@ -118,8 +118,11 @@ export const exampleTitleVisibleTest: RunnerTest = async (ctx) => {
 };
 ```
 
-The `"use runner"` directive is a convention that tells humans and tooling that this function runs inside the runner harness.
+The `"use runner"` directive is required for test discovery. It tells the runner that this function should be executed as a test.
 You do not need to launch Playwright or close the browser yourself.
+
+Only functions with this directive will be discovered as tests.
+This allows you to have helper functions or utilities in the same file without them being treated as tests.
 
 ### Context
 
@@ -150,8 +153,8 @@ npx runner run \
 
 By default the CLI will:
 
-* load `tests/**/*.ts`
-* look for exported values typed as `RunnerTest`
+* scan `src/**/*.ts` for test files
+* discover only exported async functions that have the `"use runner"` directive
 * run the requested tests against the URL
 * print a summary and exit non zero on failures
 
@@ -159,6 +162,36 @@ You can provide a config file to avoid long flags:
 
 ```bash
 npx runner run --config runners.config.ts
+```
+
+### Directive-based test discovery
+
+The CLI only discovers tests that have the `"use runner"` directive. This ensures that helper functions and utilities in your test files are not accidentally executed as tests.
+
+* **Module-level directive**: If a file has `"use runner";` at the top, all exported async functions in that file are considered tests
+* **Function-level directive**: If a function has `"use runner";` as its first statement, that function is considered a test
+
+Example with function-level directive:
+
+```ts
+export const myTest: RunnerTest = async (ctx) => {
+  "use runner";
+  // ... test implementation
+};
+```
+
+Example with module-level directive:
+
+```ts
+"use runner";
+
+export const test1: RunnerTest = async (ctx) => {
+  // ... test implementation
+};
+
+export const test2: RunnerTest = async (ctx) => {
+  // ... test implementation
+};
 ```
 
 Example `runners.config.ts`:
@@ -181,7 +214,7 @@ You can expose a runner as an HTTP endpoint, for use by an orchestrator:
 
 ```ts
 // api/runner.ts
-import { createHttpRunner } from "runner/http";
+import { createHttpRunner } from "@runners/http";
 import * as tests from "../tests";
 
 const region = process.env.RUNNER_REGION || "eu-west-1";

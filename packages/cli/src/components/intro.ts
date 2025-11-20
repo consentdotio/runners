@@ -1,5 +1,5 @@
-import color from 'picocolors';
-import type { CliContext } from '~/context/types';
+import color from "picocolors";
+import type { CliContext } from "~/context/types";
 
 /**
  * Displays the CLI introduction sequence, including
@@ -13,6 +13,6 @@ export async function displayIntro(
 ): Promise<void> {
   const { logger } = context;
 
-  logger.info(`${color.bold('Welcome!')} Let's get started.`);
-  logger.message('');
+  logger.info(`${color.bold("Welcome!")} Let's get started.`);
+  logger.message("");
 }

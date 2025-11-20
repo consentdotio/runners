@@ -1,0 +1,35 @@
+{
+  "name": "@runners/http",
+  "version": "0.0.0",
+  "description": "HTTP handler for API-based test execution",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "rslib build",
+    "dev": "rslib build --watch",
+    "clean": "tsc --build --clean && rm -r dist ||:",
+    "typecheck": "tsc --noEmit",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src"
+  },
+  "dependencies": {
+    "runners": "workspace:*"
+  },
+  "devDependencies": {
+    "@runners/tsconfig": "workspace:*",
+    "@rslib/core": "^0.18.0",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

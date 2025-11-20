@@ -1,5 +1,5 @@
-import * as p from '@clack/prompts';
-import type { CliContext } from './types';
+import * as p from "@clack/prompts";
+import type { CliContext } from "./types";
 
 /**
  * Creates user interaction utilities for the CLI context
@@ -32,4 +32,3 @@ export function createUserInteraction(context: CliContext) {
     },
   };
 }
-

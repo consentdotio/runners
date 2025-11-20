@@ -1,0 +1,24 @@
+{
+  "name": "http-api-example",
+  "version": "0.0.0",
+  "description": "Example of using runners HTTP API handler",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "tsx server.js",
+    "test": "tsx test-client.js",
+    "prebuild:plugin": "cd ../../packages/swc-plugin-runners && pnpm build",
+    "build": "echo 'Note: SWC plugin transformation is optional. Directives work fine without transformation.' && echo 'To use SWC plugin, ensure @runners/swc-plugin is built first.'"
+  },
+  "dependencies": {
+    "runners": "workspace:*",
+    "@runners/http": "workspace:*",
+    "@runner/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}
+

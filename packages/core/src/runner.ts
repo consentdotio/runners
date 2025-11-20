@@ -1,10 +1,10 @@
-import { chromium, type Browser } from 'playwright';
-import { createContext } from './context.js';
+import { chromium, type Browser } from "playwright";
+import { createContext } from "./context.js";
 import type {
   RunnerTestResult,
   RunTestsOptions,
   RunTestsResult,
-} from './types.js';
+} from "./types.js";
 
 const DEFAULT_TIMEOUT = 30_000; // 30 seconds
 
@@ -33,7 +33,7 @@ export async function runTests(
 
       try {
         // Navigate to the URL before each test
-        await page.goto(url, { waitUntil: 'networkidle' });
+        await page.goto(url, { waitUntil: "networkidle" });
 
         // Run the test with timeout
         result = await Promise.race([
@@ -54,8 +54,8 @@ export async function runTests(
           error instanceof Error ? error.message : String(error);
 
         result = {
-          name: 'unknown',
-          status: 'error',
+          name: "unknown",
+          status: "error",
           errorMessage,
           durationMs,
         };

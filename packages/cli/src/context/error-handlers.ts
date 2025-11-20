@@ -1,5 +1,5 @@
-import color from 'picocolors';
-import type { CliContext } from './types';
+import color from "picocolors";
+import type { CliContext } from "./types";
 
 /**
  * Creates error handling utilities for the CLI context
@@ -25,7 +25,7 @@ export function createErrorHandlers(context: CliContext) {
       }
 
       // Use logger.outro for the final goodbye message
-      logger.failed(`${color.red('Operation failed unexpectedly.')}`);
+      logger.failed(`${color.red("Operation failed unexpectedly.")}`);
       process.exit(1);
     },
 
@@ -35,7 +35,7 @@ export function createErrorHandlers(context: CliContext) {
      * @param context Optional context about where the cancellation occurred
      */
     handleCancel: (
-      message = 'Operation cancelled.',
+      message = "Operation cancelled.",
       context?: { command?: string; stage?: string }
     ): never => {
       logger.debug(`Handling cancellation: ${message}`, context);
@@ -45,4 +45,3 @@ export function createErrorHandlers(context: CliContext) {
     },
   };
 }
-

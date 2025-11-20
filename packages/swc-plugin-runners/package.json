@@ -1,0 +1,33 @@
+{
+  "name": "@runners/swc-plugin",
+  "version": "0.0.0",
+  "description": "SWC plugin for transforming 'use runner' directives",
+  "license": "MIT",
+  "type": "module",
+  "main": "swc_plugin_runners.wasm",
+  "files": [
+    "swc_plugin_runners.wasm"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./swc_plugin_runners.wasm"
+  },
+  "peerDependencies": {
+    "@swc/core": "^1.11.24"
+  },
+  "keywords": [
+    "swc-plugin",
+    "runners",
+    "directive"
+  ],
+  "scripts": {
+    "build": "node build.js",
+    "clean": "cargo clean",
+    "test": "cargo test",
+    "prepublishOnly": "pnpm build"
+  },
+  "preferUnplugged": true
+}
+

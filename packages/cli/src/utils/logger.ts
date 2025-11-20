@@ -1,9 +1,9 @@
-import * as p from '@clack/prompts';
-import color from 'picocolors';
+import * as p from "@clack/prompts";
+import color from "picocolors";
 
 // Define standard log levels
-export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
-export const validLogLevels: LogLevel[] = ['error', 'warn', 'info', 'debug'];
+export type LogLevel = "error" | "warn" | "info" | "debug";
+export const validLogLevels: LogLevel[] = ["error", "warn", "info", "debug"];
 export type CliLogger = Logger & CliExtensions;
 
 // Define CLI-specific extension levels with their method signatures
@@ -24,9 +24,9 @@ interface Logger {
 
 const formatArgs = (args: unknown[]): string => {
   if (args.length === 0) {
-    return '';
+    return "";
   }
-  return `\n${args.map((arg) => `  - ${JSON.stringify(arg, null, 2)}`).join('\n')}`;
+  return `\n${args.map((arg) => `  - ${JSON.stringify(arg, null, 2)}`).join("\n")}`;
 };
 
 /**
@@ -42,27 +42,27 @@ export const formatLogMessage = (
   message: unknown,
   args: unknown[] = []
 ): string => {
-  const messageStr = typeof message === 'string' ? message : String(message);
+  const messageStr = typeof message === "string" ? message : String(message);
   const formattedArgs = formatArgs(args);
 
   switch (logLevel) {
-    case 'error': {
-      return `${color.bgRed(color.black(' error '))} ${messageStr}${formattedArgs}`;
+    case "error": {
+      return `${color.bgRed(color.black(" error "))} ${messageStr}${formattedArgs}`;
     }
-    case 'warn': {
-      return `${color.bgYellow(color.black(' warning '))} ${messageStr}${formattedArgs}`;
+    case "warn": {
+      return `${color.bgYellow(color.black(" warning "))} ${messageStr}${formattedArgs}`;
     }
-    case 'info': {
-      return `${color.bgGreen(color.black(' info '))} ${messageStr}${formattedArgs}`;
+    case "info": {
+      return `${color.bgGreen(color.black(" info "))} ${messageStr}${formattedArgs}`;
     }
-    case 'debug': {
-      return `${color.bgBlack(color.white(' debug '))} ${messageStr}${formattedArgs}`;
+    case "debug": {
+      return `${color.bgBlack(color.white(" debug "))} ${messageStr}${formattedArgs}`;
     }
-    case 'success': {
-      return `${color.bgGreen(color.white(' success '))} ${messageStr}${formattedArgs}`;
+    case "success": {
+      return `${color.bgGreen(color.white(" success "))} ${messageStr}${formattedArgs}`;
     }
-    case 'failed': {
-      return `${color.bgRed(color.white(' failed '))} ${messageStr}${formattedArgs}`;
+    case "failed": {
+      return `${color.bgRed(color.white(" failed "))} ${messageStr}${formattedArgs}`;
     }
     default: {
       // Handle unexpected levels
@@ -81,25 +81,25 @@ export const formatLogMessage = (
  * @param args - Additional arguments to include
  */
 export const logMessage = (
-  logLevel: LogLevel | 'success' | 'failed' | string,
+  logLevel: LogLevel | "success" | "failed" | string,
   message: unknown,
   ...args: unknown[]
 ): void => {
   const formattedMessage = formatLogMessage(logLevel, message, args);
 
   switch (logLevel) {
-    case 'error':
+    case "error":
       p.log.error(formattedMessage);
       break;
-    case 'warn':
+    case "warn":
       p.log.warn(formattedMessage);
       break;
-    case 'info':
-    case 'debug':
+    case "info":
+    case "debug":
       p.log.info(formattedMessage);
       break;
-    case 'success':
-    case 'failed':
+    case "success":
+    case "failed":
       p.outro(formattedMessage);
       break;
     default:
@@ -111,7 +111,7 @@ export const logMessage = (
 // It includes the custom log handler for clack integration.
 export const createCliLogger = (level: LogLevel): CliLogger => {
   const shouldLog = (logLevel: LogLevel): boolean => {
-    const levels: LogLevel[] = ['error', 'warn', 'info', 'debug'];
+    const levels: LogLevel[] = ["error", "warn", "info", "debug"];
     const currentLevelIndex = levels.indexOf(level);
     const messageLevelIndex = levels.indexOf(logLevel);
     return messageLevelIndex <= currentLevelIndex;
@@ -119,23 +119,23 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
 
   const baseLogger: Logger = {
     error: (message: string, ...args: unknown[]) => {
-      if (shouldLog('error')) {
-        logMessage('error', message, ...args);
+      if (shouldLog("error")) {
+        logMessage("error", message, ...args);
       }
     },
     warn: (message: string, ...args: unknown[]) => {
-      if (shouldLog('warn')) {
-        logMessage('warn', message, ...args);
+      if (shouldLog("warn")) {
+        logMessage("warn", message, ...args);
       }
     },
     info: (message: string, ...args: unknown[]) => {
-      if (shouldLog('info')) {
-        logMessage('info', message, ...args);
+      if (shouldLog("info")) {
+        logMessage("info", message, ...args);
       }
     },
     debug: (message: string, ...args: unknown[]) => {
-      if (shouldLog('debug')) {
-        logMessage('debug', message, ...args);
+      if (shouldLog("debug")) {
+        logMessage("debug", message, ...args);
       }
     },
   };
@@ -150,9 +150,9 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
 
   // Add note method (creates a note box)
   extendedLogger.note = (message: string, ...args: unknown[]) => {
-    const messageStr = typeof message === 'string' ? message : String(message);
+    const messageStr = typeof message === "string" ? message : String(message);
     const title =
-      args.length > 0 && typeof args[0] === 'string' ? args[0] : undefined;
+      args.length > 0 && typeof args[0] === "string" ? args[0] : undefined;
     //@ts-expect-error
     p.note(messageStr, title, {
       format: (line: string) => line,
@@ -161,12 +161,12 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
 
   // Add success method (final message)
   extendedLogger.success = (message: string, ...args: unknown[]) => {
-    logMessage('success', message, ...args);
+    logMessage("success", message, ...args);
   };
 
   // Add failed method (final message)
   extendedLogger.failed = (message: string, ...args: unknown[]) => {
-    logMessage('failed', message, ...args);
+    logMessage("failed", message, ...args);
     process.exit(0);
   };
 
@@ -177,4 +177,3 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
 
   return extendedLogger;
 };
-

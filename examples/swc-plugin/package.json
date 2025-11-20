@@ -1,0 +1,22 @@
+{
+  "name": "swc-plugin-example",
+  "version": "0.0.0",
+  "description": "Example of using the SWC plugin for 'use runner' directive",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "swc src -d dist",
+    "build:watch": "swc src -d dist --watch"
+  },
+  "dependencies": {
+    "runners": "workspace:*"
+  },
+  "devDependencies": {
+    "@runners/swc-plugin": "workspace:*",
+    "@swc/cli": "^0.7.9",
+    "@swc/core": "^1.15.2",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  }
+}
+

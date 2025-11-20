@@ -1,35 +1,35 @@
 // Environment variable for disabling telemetry
-const TELEMETRY_DISABLED_ENV = 'RUNNERS_TELEMETRY_DISABLED';
+const TELEMETRY_DISABLED_ENV = "RUNNERS_TELEMETRY_DISABLED";
 
 // Event type definitions for better typing and consistency
 export const TelemetryEventName = {
   // CLI Lifecycle events
-  CLI_INVOKED: 'cli.invoked',
-  CLI_COMPLETED: 'cli.completed',
-  CLI_EXITED: 'cli.exited',
-  CLI_ENVIRONMENT_DETECTED: 'cli.environment_detected',
+  CLI_INVOKED: "cli.invoked",
+  CLI_COMPLETED: "cli.completed",
+  CLI_EXITED: "cli.exited",
+  CLI_ENVIRONMENT_DETECTED: "cli.environment_detected",
 
   // Command events
-  COMMAND_EXECUTED: 'command.executed',
-  COMMAND_SUCCEEDED: 'command.succeeded',
-  COMMAND_FAILED: 'command.failed',
-  COMMAND_UNKNOWN: 'command.unknown',
+  COMMAND_EXECUTED: "command.executed",
+  COMMAND_SUCCEEDED: "command.succeeded",
+  COMMAND_FAILED: "command.failed",
+  COMMAND_UNKNOWN: "command.unknown",
 
   // UI events
-  INTERACTIVE_MENU_OPENED: 'ui.menu.opened',
-  INTERACTIVE_MENU_EXITED: 'ui.menu.exited',
+  INTERACTIVE_MENU_OPENED: "ui.menu.opened",
+  INTERACTIVE_MENU_EXITED: "ui.menu.exited",
 
   // Config events
-  CONFIG_LOADED: 'config.loaded',
-  CONFIG_ERROR: 'config.error',
-  CONFIG_UPDATED: 'config.updated',
+  CONFIG_LOADED: "config.loaded",
+  CONFIG_ERROR: "config.error",
+  CONFIG_UPDATED: "config.updated",
 
   // Help and version events
-  HELP_DISPLAYED: 'help.displayed',
-  VERSION_DISPLAYED: 'version.displayed',
+  HELP_DISPLAYED: "help.displayed",
+  VERSION_DISPLAYED: "version.displayed",
 
   // Error events
-  ERROR_OCCURRED: 'error.occurred',
+  ERROR_OCCURRED: "error.occurred",
 } as const;
 
 export type TelemetryEventName =
@@ -74,8 +74,8 @@ export class Telemetry {
   constructor(options?: TelemetryOptions) {
     // Check if telemetry is disabled via environment variable
     const envDisabled =
-      process.env[TELEMETRY_DISABLED_ENV] === '1' ||
-      process.env[TELEMETRY_DISABLED_ENV]?.toLowerCase() === 'true';
+      process.env[TELEMETRY_DISABLED_ENV] === "1" ||
+      process.env[TELEMETRY_DISABLED_ENV]?.toLowerCase() === "true";
 
     // Initialize state based on options or defaults
     // Disable telemetry by default
@@ -98,7 +98,9 @@ export class Telemetry {
   ): void {
     if (this.disabled) {
       if (this.debug) {
-        console.debug(`Telemetry event skipped (${eventName}): Telemetry disabled`);
+        console.debug(
+          `Telemetry event skipped (${eventName}): Telemetry disabled`
+        );
       }
       return;
     }
@@ -143,14 +145,14 @@ export class Telemetry {
     // Process flags to filter out sensitive or undefined values
     const safeFlags: Record<string, string | number | boolean> = {};
     for (const [key, value] of Object.entries(flags)) {
-      if (key !== 'config' && value !== undefined) {
+      if (key !== "config" && value !== undefined) {
         safeFlags[key] = value;
       }
     }
 
     this.trackEvent(TelemetryEventName.COMMAND_EXECUTED, {
       command,
-      args: args.join(' '),
+      args: args.join(" "),
       flagsData: JSON.stringify(safeFlags),
     });
   }
@@ -170,7 +172,7 @@ export class Telemetry {
       command,
       error: error.message,
       errorName: error.name,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 
