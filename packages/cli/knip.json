@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "./src/index.ts",
+    "./test/**.test.ts",
+    "vitest.config.ts",
+    "rslib.config.ts",
+    "tsconfig.json"
+  ],
+  "project": "**/*.{js,ts,jsx,tsx}",
+  "ignoreBinaries": ["biome", "knip"],
+  "ignore": ["**/*.spec.{js,ts}", "**/*.test.{js,ts}"],
+  "rules": {
+    "exports": "warn",
+    "types": "warn",
+    "dependencies": "error",
+    "files": "warn"
+  },
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": []
+}

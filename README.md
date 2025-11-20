@@ -54,11 +54,11 @@ APIs described here are the target surface and may change slightly as the implem
 ## Installation
 
 ```bash
-npm install runners
+npm install runner
 # or
-pnpm add runners
+pnpm add runner
 # or
-yarn add runners
+yarn add runner
 ```
 
 ---
@@ -98,7 +98,7 @@ Create a file in `tests/`:
 
 ```ts
 // tests/example-title-visible.ts
-import type { RunnerTest } from "runners";
+import type { RunnerTest } from "runner";
 
 export const exampleTitleVisibleTest: RunnerTest = async (ctx) => {
   "use runner";
@@ -142,10 +142,10 @@ type RunnerTestContext = {
 Install the CLI (same package):
 
 ```bash
-npx runners run \
+npx runner run \
   --url https://example.com \
-  --tests exampleTitleVisibleTest \
-  --tests cookieBannerVisibleTest
+  exampleTitleVisibleTest \
+  cookieBannerVisibleTest
 ```
 
 By default the CLI will:
@@ -158,13 +158,13 @@ By default the CLI will:
 You can provide a config file to avoid long flags:
 
 ```bash
-npx runners run --config runners.config.ts
+npx runner run --config runners.config.ts
 ```
 
 Example `runners.config.ts`:
 
 ```ts
-import { defineConfig } from "runners/config";
+import { defineConfig } from "runner/config";
 
 export default defineConfig({
   url: "https://example.com",
@@ -181,7 +181,7 @@ You can expose a runner as an HTTP endpoint, for use by an orchestrator:
 
 ```ts
 // api/runner.ts
-import { createHttpRunner } from "runners/http";
+import { createHttpRunner } from "runner/http";
 import * as tests from "../tests";
 
 const region = process.env.RUNNER_REGION || "eu-west-1";
@@ -239,7 +239,7 @@ Wrap your `next.config` with the `withRunners` helper:
 
 import type { NextConfig } from "next";
 
-import { withRunners } from "runners/next";
+import { withRunners } from "runner/next";
 
 const nextConfig: NextConfig = {
   // your existing Next.js config here
@@ -279,14 +279,14 @@ If you are using Nitro (which Hono can run under), you can enable the runner via
 import { defineConfig } from "nitro";
 
 export default defineConfig({
-  modules: ["runners/nitro"],
+  modules: ["runner/nitro"],
   routes: {
     "/**": "./src/index.ts",
   },
 });
 ```
 
-The `runners/nitro` module will:
+The `runner/nitro` module will:
 
 * register a runner endpoint (for example `/api/runner`)
 * wire in your `tests/` directory
@@ -301,7 +301,7 @@ Your Hono app then focuses purely on your normal routes, while the runner endpoi
 You can also use `runners` directly from Node without HTTP or the CLI:
 
 ```ts
-import { runTests } from "runners/core";
+import { runTests } from "runner/core";
 import * as tests from "./tests";
 
 const result = await runTests({
@@ -321,7 +321,7 @@ console.log(result.results);
 The main public types are:
 
 ```ts
-import type { RunnerTest, RunnerTestContext, RunnerTestResult } from "runners";
+import type { RunnerTest, RunnerTestContext, RunnerTestResult } from "runner";
 ```
 
 Roughly:
@@ -366,11 +366,11 @@ You are expected to bring your own orchestrator, database and UI if you want a f
 
 Planned for early versions:
 
-* [ ] Basic Playwright based runner
-* [ ] CLI with `run` command and config file
+* [x] Basic Playwright based runner ✅
+* [x] CLI with `run` command and config file ✅
 * [ ] HTTP handler helper for API based runners
-* [ ] Simple test discovery in a `tests/` folder
-* [ ] Minimal logging hooks
+* [x] Simple test discovery in a `tests/` folder ✅
+* [x] Minimal logging hooks ✅
 * [ ] Examples with multi region deployment
 
 Pull requests and early feedback are very welcome.

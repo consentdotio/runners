@@ -1,0 +1,4 @@
+# Commands directory
+# Add your command implementations here as subdirectories
+# Example: src/commands/run/index.ts
+

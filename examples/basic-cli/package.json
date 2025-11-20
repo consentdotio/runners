@@ -1,0 +1,19 @@
+{
+  "name": "basic-cli-example",
+  "version": "0.0.0",
+  "description": "Basic example of using runners CLI",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "runners run --url https://consent.io",
+    "test:config": "runners run --config runners.config.ts"
+  },
+  "dependencies": {
+    "runners": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}
+
