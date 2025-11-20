@@ -3,33 +3,28 @@
   "version": "0.0.0",
   "description": "A small SDK for writing Playwright tests that can be executed by an API orchestrator or a local CLI",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "default": "./dist/index.mjs"
     },
     "./core": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./config": {
-      "types": "./dist/config.d.ts",
-      "default": "./dist/config.js"
+      "default": "./dist/index.mjs"
     }
   },
   "bin": {
-    "runners": "./cli.js"
+    "runners": "./dist/cli.mjs"
   },
   "files": [
-    "dist",
-    "cli.js"
+    "dist"
   ],
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "rslib build",
+    "dev": "rslib build --watch",
     "clean": "tsc --build --clean && rm -r dist ||:",
     "typecheck": "tsc --noEmit"
   },
@@ -43,7 +38,7 @@
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "@runner/cli": "*"
+    "@runner/cli": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@runner/cli": {

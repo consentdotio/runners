@@ -4,6 +4,8 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.2.7",
+    "@rslib/core": "^0.18.0",
+    "runners": "workspace:*",
     "turbo": "^2.5.4",
     "typescript": "^5.9.3"
   },
@@ -17,6 +19,6 @@
     "lint": "biome check",
     "format": "biome format --write",
     "clean": "turbo clean",
-    "runners": "pnpm --filter runners runners"
+    "runners": "runners"
   }
 }
