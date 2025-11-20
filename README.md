@@ -54,11 +54,11 @@ APIs described here are the target surface and may change slightly as the implem
 ## Installation
 
 ```bash
-npm install runner
+npm install runners
 # or
-pnpm add runner
+pnpm add runners
 # or
-yarn add runner
+yarn add runners
 ```
 
 ---
