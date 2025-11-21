@@ -1,5 +1,5 @@
-import { defineConfig } from 'nitro';
+import { defineConfig } from "nitro";
 
 export default defineConfig({
-  modules: ['@runners/nitro'],
+  modules: ["@runners/nitro"],
 });
