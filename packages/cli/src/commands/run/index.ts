@@ -77,7 +77,7 @@ export async function run(context: CliContext): Promise<void> {
     : runnerFunctions;
 
   const result = await runRunners({
-    runners: (runnersToRun as typeof runnerFunctions),
+    runners: runnersToRun as typeof runnerFunctions,
     region: config.region,
   });
 

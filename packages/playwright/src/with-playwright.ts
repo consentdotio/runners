@@ -61,4 +61,3 @@ export async function closeBrowser(): Promise<void> {
     browserInstance = null;
   }
 }
-

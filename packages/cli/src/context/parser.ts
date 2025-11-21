@@ -28,7 +28,8 @@ export const globalFlags: CliFlag[] = [
   },
   {
     names: ["--url"],
-    description: "Target URL to test (optional, can be passed via runner input).",
+    description:
+      "Target URL to test (optional, can be passed via runner input).",
     type: "string",
     expectsValue: true,
   },
