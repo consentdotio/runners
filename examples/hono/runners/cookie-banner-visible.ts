@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
 
 // Define schemas
 const CookieBannerInputSchema = z.object({
@@ -8,6 +9,7 @@ const CookieBannerInputSchema = z.object({
     .optional()
     .default(["[data-cookie-banner]", ".cookie-banner", "#cookie-banner"]),
   timeout: z.number().optional().default(5000),
+  url: z.string(),
 });
 
 const CookieBannerOutputSchema = z.object({
@@ -17,11 +19,14 @@ const CookieBannerOutputSchema = z.object({
 });
 
 export const cookieBannerVisibleTest: Runner<
-  z.infer<typeof CookieBannerInputSchema>,
-  z.infer<typeof CookieBannerOutputSchema>
+  typeof CookieBannerInputSchema,
+  typeof CookieBannerOutputSchema
 > = async (ctx, input) => {
   "use runner";
-  const { page, url, region, log } = ctx;
+  if (!input?.url) {
+    throw new Error("url is required in input");
+  }
+  const { page, url, region, log } = await withPlaywright(ctx, input.url);
 
   // Use input with defaults - input is typed as CookieBannerInput
   const { selectors, timeout } = input || {};

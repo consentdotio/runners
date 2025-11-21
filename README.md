@@ -1,17 +1,28 @@
 # runners
 
-A small SDK for writing Playwright runners that can be executed by an API orchestrator or a local CLI, without worrying about browsers, containers, or regions.
+A small SDK for writing runners that can be executed by an API orchestrator or a local CLI, without worrying about browsers, containers, or regions.
 
 You write tiny runner functions:
 
 ```ts
 // src/runners/cookie-banner-visible.ts
+import { z } from "zod";
 import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
 
-export const cookieBannerVisibleTest: Runner = async (ctx) => {
+const CookieBannerInputSchema = z.object({
+  url: z.string(),
+});
+
+export const cookieBannerVisibleTest: Runner<
+  z.infer<typeof CookieBannerInputSchema>
+> = async (ctx, input) => {
   "use runner";
 
-  const { page, url, region, log } = ctx;
+  if (!input?.url) {
+    throw new Error("url is required in input");
+  }
+  const { page, url, region, log } = await withPlaywright(ctx, input.url);
 
   log("Checking cookie banner", { url, region });
 
@@ -26,15 +37,16 @@ export const cookieBannerVisibleTest: Runner = async (ctx) => {
     details: { visible },
   };
 };
-````
+```
 
 The `runners` SDK takes care of:
 
-* launching and closing Playwright
 * handling timeouts and errors
 * normalising results
 * exposing a HTTP handler for remote orchestration
 * exposing a CLI command for local or CI use
+
+Playwright is opt-in via `withPlaywright()` - use it only when you need browser functionality.
 
 The same runner file can be run:
 
@@ -98,12 +110,23 @@ Create a file anywhere in `src/`:
 
 ```ts
 // src/runners/example-title-visible.ts
+import { z } from "zod";
 import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
 
-export const exampleTitleVisibleTest: Runner = async (ctx) => {
+const ExampleTitleInputSchema = z.object({
+  url: z.string(),
+});
+
+export const exampleTitleVisibleTest: Runner<
+  z.infer<typeof ExampleTitleInputSchema>
+> = async (ctx, input) => {
   "use runner";
 
-  const { page, url, log } = ctx;
+  if (!input?.url) {
+    throw new Error("url is required in input");
+  }
+  const { page, url, log } = await withPlaywright(ctx, input.url);
 
   log("Checking page title", { url });
 
@@ -119,24 +142,31 @@ export const exampleTitleVisibleTest: Runner = async (ctx) => {
 ```
 
 The `"use runner"` directive is required for runner discovery. It tells the runner harness that this function should be executed as a runner.
-You do not need to launch Playwright or close the browser yourself.
 
 Only functions with this directive will be discovered as runners.
 This allows you to have helper functions or utilities in the same file without them being treated as runners.
 
 ### Context
 
-The `RunnerContext` looks like:
+The minimal `RunnerContext` looks like:
 
 ```ts
 type RunnerContext = {
-  page: import("playwright").Page;
-  url: string;
   region?: string;
   runId?: string;
   log: (message: string, meta?: Record<string, unknown>) => void;
 };
 ```
+
+For Playwright functionality, use `withPlaywright(ctx, url)` from `runners/playwright` to get an enhanced context:
+
+```ts
+import { withPlaywright } from "runners/playwright";
+
+const { page, url, region, log } = await withPlaywright(ctx, input.url);
+```
+
+This gives you a `PlaywrightContext` that extends `RunnerContext` with `page` and `url`.
 
 ---
 
@@ -145,23 +175,25 @@ type RunnerContext = {
 Install the CLI (same package):
 
 ```bash
-npx runner run \
+npx runners run \
   --url https://example.com \
   exampleTitleVisibleTest \
   cookieBannerVisibleTest
 ```
 
+The `--url` flag is optional. If provided, it will be passed to runners via their input schema. Runners that need Playwright should accept `url` in their input and use `withPlaywright()`.
+
 By default the CLI will:
 
 * scan `src/**/*.ts` for runner files
 * discover only exported async functions that have the `"use runner"` directive
-* run the requested runners against the URL
+* run the requested runners
 * print a summary and exit non zero on failures
 
 You can provide a config file to avoid long flags:
 
 ```bash
-npx runner run --config runners.config.ts
+npx runners run --config runners.config.ts
 ```
 
 ### Directive-based runner discovery
@@ -200,7 +232,7 @@ Example `runners.config.ts`:
 import { defineConfig } from "runners/config";
 
 export default defineConfig({
-  url: "https://example.com",
+  url: "https://example.com", // Optional - will be passed to runners via input
   region: "eu-west-1",
   runners: ["cookieBannerVisibleTest", "exampleTitleVisibleTest"],
 });
@@ -233,15 +265,19 @@ export const handler = createHttpRunner({
 {
   "url": "https://example.com",
   "runners": ["cookieBannerVisibleTest"],
-  "runId": "optional-run-id"
+  "runId": "optional-run-id",
+  "input": {
+    "url": "https://example.com"
+  }
 }
 ```
+
+The `url` field is optional. If provided, it will be merged into the `input` object passed to runners. Runners that need Playwright should accept `url` in their input schema and use `withPlaywright()`.
 
 ### Response
 
 ```json
 {
-  "url": "https://example.com",
   "region": "eu-west-1",
   "runId": "optional-run-id",
   "results": [
@@ -337,9 +373,13 @@ You can also use `runners` directly from Node without HTTP or the CLI:
 import { runRunners } from "runners";
 import * as runners from "./runners";
 
+// Pass url via runner input if needed
 const result = await runRunners({
-  url: "https://example.com",
-  runners: [runners.cookieBannerVisibleTest],
+  runners: [
+    async (ctx) => {
+      return runners.cookieBannerVisibleTest(ctx, { url: "https://example.com" });
+    },
+  ],
   region: "eu-west-1",
   runId: "local-dev",
 });
@@ -381,9 +421,10 @@ The exact shape may grow with more metadata, but this is the core.
 
 This project **is**:
 
-* a small SDK for defining Playwright based runners as pure functions
-* a runner harness that hides browser and container details
+* a small SDK for defining runners as pure functions
+* a runner harness that handles execution and results
 * a thin HTTP and CLI surface around that runner
+* Playwright support via opt-in `withPlaywright()` helper
 
 This project **is not**:
 
@@ -399,7 +440,8 @@ You are expected to bring your own orchestrator, database and UI if you want a f
 
 Planned for early versions:
 
-* [x] Basic Playwright based runner ✅
+* [x] Basic runner SDK ✅
+* [x] Opt-in Playwright support via `withPlaywright()` ✅
 * [x] CLI with `run` command and config file ✅
 * [x] HTTP handler helper for API based runners ✅
 * [x] Simple runner discovery in a `runners/` folder ✅

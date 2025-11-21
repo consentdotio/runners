@@ -1,8 +1,19 @@
+import { z } from "zod";
 import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
 
-export const exampleTitleVisibleTest: Runner = async (ctx) => {
+const ExampleTitleInputSchema = z.object({
+  url: z.string(),
+});
+
+export const exampleTitleVisibleTest: Runner<
+  typeof ExampleTitleInputSchema
+> = async (ctx, input) => {
   "use runner";
-  const { page, url, log } = ctx;
+  if (!input?.url) {
+    throw new Error("url is required in input");
+  }
+  const { page, url, log } = await withPlaywright(ctx, input.url);
 
   log("Checking page title", { url });
 

@@ -1,4 +1,5 @@
 import { runRunners, defineConfig } from "@runners/core";
+import type { RunnerContext, RunnerResult } from "@runners/core";
 import { loadRunners } from "../../utils/load-runners";
 import type { CliContext } from "../../context/types";
 
@@ -6,7 +7,7 @@ export async function run(context: CliContext): Promise<void> {
   const { logger, flags, commandArgs, error: errorHandler } = context;
 
   let config: {
-    url: string;
+    url?: string;
     region?: string;
     runners: string[];
   };
@@ -31,14 +32,6 @@ export async function run(context: CliContext): Promise<void> {
     config = defineConfig(configExport);
   } else {
     // Use CLI options
-    if (!url) {
-      errorHandler.handleError(
-        new Error("--url is required when --config is not provided"),
-        "Missing required option"
-      );
-      // handleError never returns, but TypeScript needs this for type narrowing
-      return;
-    }
     config = {
       url,
       region,
@@ -63,13 +56,28 @@ export async function run(context: CliContext): Promise<void> {
     return;
   }
 
-  logger.info(
-    `Running ${runnerFunctions.length} runner(s) against ${config.url}...`
-  );
+  if (config.url) {
+    logger.info(
+      `Running ${runnerFunctions.length} runner(s) against ${config.url}...`
+    );
+  } else {
+    logger.info(`Running ${runnerFunctions.length} runner(s)...`);
+  }
+
+  // Prepare runner input - include url if provided
+  const runnerInput = config.url ? { url: config.url } : undefined;
+
+  // Wrap runners to pass input if url is provided
+  const runnersToRun = runnerInput
+    ? runnerFunctions.map((runner) => {
+        return async (ctx: RunnerContext): Promise<RunnerResult<unknown>> => {
+          return runner(ctx, runnerInput);
+        };
+      })
+    : runnerFunctions;
 
   const result = await runRunners({
-    url: config.url,
-    runners: runnerFunctions,
+    runners: (runnersToRun as typeof runnerFunctions),
     region: config.region,
   });
 

@@ -11,8 +11,6 @@ export type RunnerResult<TDetails = Record<string, unknown>> = {
 };
 
 export type RunnerContext = {
-  page: import("playwright").Page;
-  url: string;
   region?: string;
   runId?: string;
   log: (message: string, meta?: Record<string, unknown>) => void;
@@ -32,7 +30,6 @@ type ExtractRunnerResults<TRunners extends readonly Runner[]> = {
 };
 
 export type RunRunnersOptions<TRunners extends readonly Runner[] = Runner[]> = {
-  url: string;
   runners: TRunners;
   region?: string;
   runId?: string;
@@ -40,7 +37,6 @@ export type RunRunnersOptions<TRunners extends readonly Runner[] = Runner[]> = {
 };
 
 export type RunRunnersResult<TRunners extends readonly Runner[] = Runner[]> = {
-  url: string;
   region?: string;
   runId?: string;
   results: ExtractRunnerResults<TRunners>;

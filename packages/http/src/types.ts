@@ -10,10 +10,12 @@ export type {
 
 // HTTP-specific types
 export type HttpRunnerRequest = {
-  url: string;
+  url?: string;
   runners: string[];
   runId?: string;
   region?: string;
+  // Input data to pass to runners (can include url if runner needs it)
+  input?: Record<string, unknown>;
 };
 
 export type CreateHttpRunnerOptions = {

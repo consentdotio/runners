@@ -175,9 +175,6 @@ importers:
       '@clack/prompts':
         specifier: ^0.10.1
         version: 0.10.1
-      '@runners/config':
-        specifier: workspace:*
-        version: link:../config
       '@runners/core':
         specifier: workspace:*
         version: link:../core
@@ -249,9 +246,6 @@ importers:
       glob:
         specifier: ^11.0.0
         version: 11.1.0
-      playwright:
-        specifier: ^1.48.0
-        version: 1.56.1
     devDependencies:
       '@runners/tsconfig':
         specifier: workspace:*
@@ -325,6 +319,25 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/playwright:
+    dependencies:
+      '@runners/core':
+        specifier: workspace:*
+        version: link:../core
+      playwright:
+        specifier: ^1.48.0
+        version: 1.56.1
+    devDependencies:
+      '@runners/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/runners:
     dependencies:
       '@runners/cli':
@@ -345,6 +358,9 @@ importers:
       '@runners/nitro':
         specifier: workspace:*
         version: link:../nitro
+      '@runners/playwright':
+        specifier: workspace:*
+        version: link:../playwright
     devDependencies:
       '@runners/tsconfig':
         specifier: workspace:*

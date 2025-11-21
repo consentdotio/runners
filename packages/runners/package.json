@@ -24,6 +24,10 @@
     "./http": {
       "types": "./dist/http.d.ts",
       "default": "./dist/http.mjs"
+    },
+    "./playwright": {
+      "types": "./dist/playwright.d.ts",
+      "default": "./dist/playwright.mjs"
     }
   },
   "main": "dist/index.mjs",
@@ -48,7 +52,8 @@
     "@runners/core": "workspace:*",
     "@runners/errors": "workspace:*",
     "@runners/http": "workspace:*",
-    "@runners/nitro": "workspace:*"
+    "@runners/nitro": "workspace:*",
+    "@runners/playwright": "workspace:*"
   },
   "devDependencies": {
     "@runners/tsconfig": "workspace:*",

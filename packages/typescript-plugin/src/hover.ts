@@ -100,7 +100,7 @@ export function getHoverInfo(
     ],
     documentation: [
       {
-        text: 'The `"use runner"` directive marks this function as a runner that will be discovered and executed by the Runners SDK. Runner functions must be async and receive a `RunnerContext` parameter.',
+        text: 'The `"use runner"` directive marks this function as a runner that will be discovered and executed by the Runners SDK. Runner functions must be async and receive a `RunnerContext` parameter.\n\nFor Playwright functionality, use `withPlaywright(ctx, url)` from `runners/playwright` to get an enhanced context with `page` and `url`.',
         kind: 'text',
       },
     ],

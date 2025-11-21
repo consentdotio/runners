@@ -1,7 +1,7 @@
 {
-  "name": "@runners/core",
+  "name": "@runners/playwright",
   "version": "0.0.0",
-  "description": "A small SDK for writing Playwright tests that can be executed by an API orchestrator or a local CLI",
+  "description": "Playwright integration for runners SDK",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -24,12 +24,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@runners/config": "workspace:*",
-    "@runners/errors": "workspace:*",
-    "@standard-schema/spec": "^1.0.0",
-    "comment-json": "^4.4.1",
-    "find-up": "^7.0.0",
-    "glob": "^11.0.0"
+    "@runners/core": "workspace:*",
+    "playwright": "^1.48.0"
   },
   "devDependencies": {
     "@runners/tsconfig": "workspace:*",
@@ -37,3 +33,4 @@
     "typescript": "catalog:"
   }
 }
+

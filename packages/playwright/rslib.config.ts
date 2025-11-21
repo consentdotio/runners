@@ -4,12 +4,6 @@ export default defineConfig({
   source: {
     entry: {
       index: "./src/index.ts",
-      cli: "./src/cli.ts",
-      config: "./src/config.ts",
-      nitro: "./src/nitro.ts",
-      errors: "./src/errors.ts",
-      http: "./src/http.ts",
-      playwright: "./src/playwright.ts",
     },
   },
   lib: [
@@ -27,3 +21,4 @@ export default defineConfig({
     },
   },
 });
+

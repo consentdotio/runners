@@ -4,6 +4,8 @@ import type {
   CreateHttpRunnerOptions,
   HttpRunnerRequest,
   Runner,
+  RunnerContext,
+  RunnerResult,
 } from "./types";
 
 /**
@@ -67,16 +69,6 @@ export function createHttpRunner(
       }
 
       // Validate request
-      if (!body.url || typeof body.url !== "string") {
-        return new Response(
-          JSON.stringify({ error: 'Missing or invalid "url" field' }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-
       if (!Array.isArray(body.runners) || body.runners.length === 0) {
         return new Response(
           JSON.stringify({
@@ -136,10 +128,27 @@ export function createHttpRunner(
       // Use region from options or request body (options takes precedence)
       const finalRegion = region || body.region;
 
+      // Prepare runner input - merge url if provided
+      const runnerInput = body.input || {};
+      if (body.url) {
+        runnerInput.url = body.url;
+      }
+
+      // Run runners with input if provided
+      const hasInput = Object.keys(runnerInput).length > 0;
+      const runnersToRun = hasInput
+        ? resolvedRunners.map((runner) => {
+            return async (
+              ctx: RunnerContext
+            ): Promise<RunnerResult<unknown>> => {
+              return runner(ctx, runnerInput);
+            };
+          })
+        : resolvedRunners;
+
       // Run runners
       const result = await runRunners({
-        url: body.url,
-        runners: resolvedRunners,
+        runners: runnersToRun as typeof resolvedRunners,
         region: finalRegion,
         runId: body.runId,
       });
