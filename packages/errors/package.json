@@ -1,20 +1,20 @@
 {
   "name": "@runners/errors",
-  "description": "A package for standardizing errors in Runners SDK",
   "version": "0.0.0",
-  "type": "module",
-  "main": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "description": "A package for standardizing errors in Runners SDK",
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.mjs"
     }
   },
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rslib build",
     "clean": "tsc --build --clean && rm -r dist ||:",

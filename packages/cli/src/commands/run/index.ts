@@ -1,5 +1,4 @@
-import { runRunners } from "@runners/core";
-import { defineConfig } from "@runners/config";
+import { runRunners, defineConfig } from "@runners/core";
 import { loadRunners } from "../../utils/load-runners";
 import type { CliContext } from "../../context/types";
 

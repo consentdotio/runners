@@ -7,8 +7,8 @@
     "clean": "turbo clean",
     "fmt": "turbo fmt",
     "lint": "biome check",
-    "test": "turbo test",
     "runners": "runners",
+    "test": "turbo test",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {

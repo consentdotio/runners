@@ -43,9 +43,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@runners/core": "workspace:*",
     "@runners/cli": "workspace:*",
     "@runners/config": "workspace:*",
+    "@runners/core": "workspace:*",
     "@runners/errors": "workspace:*",
     "@runners/http": "workspace:*",
     "@runners/nitro": "workspace:*"

@@ -8,10 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.mjs"
-    },
-    "./core": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.mjs"
     }
   },
   "main": "dist/index.mjs",
