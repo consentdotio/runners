@@ -1,8 +1,5 @@
 import { chromium, type Browser } from "playwright";
-import {
-  RunnerExecutionError,
-  RunnerTimeoutError,
-} from "@runners/errors";
+import { RunnerExecutionError, RunnerTimeoutError } from "@runners/errors";
 import { createContext } from "./context";
 import type {
   Runner,
@@ -50,10 +47,7 @@ export async function runRunners<const TRunners extends readonly Runner[]>(
           runner(runnerContext),
           new Promise<RunnerResult<unknown>>((_, reject) =>
             setTimeout(
-              () =>
-                reject(
-                  new RunnerTimeoutError("unknown", timeout)
-                ),
+              () => reject(new RunnerTimeoutError("unknown", timeout)),
               timeout
             )
           ),

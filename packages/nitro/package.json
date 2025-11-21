@@ -6,10 +6,12 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
   },
   "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -23,8 +25,7 @@
   },
   "dependencies": {
     "@runners/builders": "workspace:*",
-    "@runners/http": "workspace:*",
-    "runners": "workspace:*"
+    "@runners/http": "workspace:*"
   },
   "devDependencies": {
     "@rslib/core": "^0.18.0",

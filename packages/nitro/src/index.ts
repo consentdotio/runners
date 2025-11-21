@@ -9,7 +9,8 @@ export default {
   name: "runners/nitro",
   // biome-ignore lint/suspicious/useAwait: nitro.options is not typed
   async setup(nitro: Nitro) {
-    const options = (nitro.options as ModuleOptions).runners || {};
+    const options =
+      (nitro.options as unknown as { runners?: ModuleOptions }).runners || {};
     // Default patterns: scan both src/** and runners/**
     let patterns: string[];
     if (options.pattern) {

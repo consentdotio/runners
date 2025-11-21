@@ -40,7 +40,7 @@ importers:
         version: 0.18.0(typescript@5.9.3)
       runners:
         specifier: workspace:*
-        version: link:packages/core
+        version: link:packages/runners
       turbo:
         specifier: ^2.5.4
         version: 2.6.1
@@ -55,7 +55,7 @@ importers:
     dependencies:
       runners:
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/runners
     devDependencies:
       '@types/node':
         specifier: ^24.10.1
@@ -66,15 +66,9 @@ importers:
 
   examples/hono:
     dependencies:
-      '@runners/http':
-        specifier: workspace:*
-        version: link:../../packages/http
-      '@runners/nitro':
-        specifier: workspace:*
-        version: link:../../packages/nitro
       runners:
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/runners
     devDependencies:
       '@oxc-transform/binding-darwin-arm64':
         specifier: ^0.98.0
@@ -94,15 +88,12 @@ importers:
 
   examples/http-api:
     dependencies:
-      '@runner/cli':
-        specifier: workspace:*
-        version: link:../../packages/cli
       '@runners/http':
         specifier: workspace:*
         version: link:../../packages/http
       runners:
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/runners
     devDependencies:
       '@types/node':
         specifier: ^24.10.1
@@ -118,7 +109,7 @@ importers:
     dependencies:
       runners:
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/runners
     devDependencies:
       '@runners/swc-plugin':
         specifier: workspace:*
@@ -141,6 +132,9 @@ importers:
       '@runners/config':
         specifier: workspace:*
         version: link:../config
+      '@runners/core':
+        specifier: workspace:*
+        version: link:../core
       '@runners/swc-plugin':
         specifier: workspace:*
         version: link:../swc-plugin-runners
@@ -162,9 +156,6 @@ importers:
       glob:
         specifier: ^11.0.0
         version: 11.1.0
-      runners:
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@rslib/core':
         specifier: ^0.18.0
@@ -187,6 +178,9 @@ importers:
       '@runners/config':
         specifier: workspace:*
         version: link:../config
+      '@runners/core':
+        specifier: workspace:*
+        version: link:../core
       fs-extra:
         specifier: ^11.3.0
         version: 11.3.2
@@ -199,12 +193,6 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-      runners:
-        specifier: workspace:*
-        version: link:../core
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -218,6 +206,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
       vitest:
         specifier: 'catalog:'
         version: 3.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)
@@ -240,9 +231,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@runner/cli':
-        specifier: workspace:*
-        version: link:../cli
       '@runners/config':
         specifier: workspace:*
         version: link:../config
@@ -292,12 +280,12 @@ importers:
 
   packages/http:
     dependencies:
+      '@runners/core':
+        specifier: workspace:*
+        version: link:../core
       '@runners/errors':
         specifier: workspace:*
         version: link:../errors
-      runners:
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@rslib/core':
         specifier: ^0.18.0
@@ -323,13 +311,41 @@ importers:
       nitro:
         specifier: ^3.0.0
         version: 3.0.0(lru-cache@11.2.2)(vite@7.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6))
-      runners:
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@rslib/core':
         specifier: ^0.18.0
         version: 0.18.0(typescript@5.9.3)
+      '@runners/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/runners:
+    dependencies:
+      '@runners/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@runners/config':
+        specifier: workspace:*
+        version: link:../config
+      '@runners/core':
+        specifier: workspace:*
+        version: link:../core
+      '@runners/errors':
+        specifier: workspace:*
+        version: link:../errors
+      '@runners/http':
+        specifier: workspace:*
+        version: link:../http
+      '@runners/nitro':
+        specifier: workspace:*
+        version: link:../nitro
+    devDependencies:
       '@runners/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

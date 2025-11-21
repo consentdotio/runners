@@ -6,7 +6,7 @@ export type {
   RunRunnersOptions,
   RunRunnersResult,
   RunStatus,
-} from "runners";
+} from "@runners/core";
 
 // HTTP-specific types
 export type HttpRunnerRequest = {
@@ -17,7 +17,7 @@ export type HttpRunnerRequest = {
 };
 
 export type CreateHttpRunnerOptions = {
-  runners: Record<string, import("runners").Runner>;
+  runners: Record<string, import("@runners/core").Runner>;
   region?: string;
   /**
    * If true, only runners with "use runner" directive will be discovered.

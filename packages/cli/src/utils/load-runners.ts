@@ -1,5 +1,5 @@
-import type { Runner } from "runners";
-import { discoverRunners } from "runners";
+import type { Runner } from "@runners/core";
+import { discoverRunners } from "@runners/core";
 
 export async function loadRunners(
   runnerNames?: string[],

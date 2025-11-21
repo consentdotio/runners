@@ -1,5 +1,5 @@
 {
-  "name": "@runners/core",
+  "name": "runners",
   "version": "0.0.0",
   "description": "A small SDK for writing Playwright tests that can be executed by an API orchestrator or a local CLI",
   "license": "MIT",
@@ -9,13 +9,28 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.mjs"
     },
-    "./core": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.mjs"
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.mjs"
+    },
+    "./nitro": {
+      "types": "./dist/nitro.d.ts",
+      "default": "./dist/nitro.mjs"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "default": "./dist/errors.mjs"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "default": "./dist/http.mjs"
     }
   },
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "bin": {
+    "runners": "./dist/cli.mjs"
+  },
   "files": [
     "dist"
   ],
@@ -28,17 +43,19 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@runners/core": "workspace:*",
+    "@runners/cli": "workspace:*",
     "@runners/config": "workspace:*",
     "@runners/errors": "workspace:*",
-    "@standard-schema/spec": "^1.0.0",
-    "comment-json": "^4.4.1",
-    "find-up": "^7.0.0",
-    "glob": "^11.0.0",
-    "playwright": "^1.48.0"
+    "@runners/http": "workspace:*",
+    "@runners/nitro": "workspace:*"
   },
   "devDependencies": {
     "@runners/tsconfig": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

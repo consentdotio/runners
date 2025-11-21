@@ -1,4 +1,4 @@
-import { RunnerError, isError } from './base';
+import { RunnerError, isError } from "./base";
 
 /**
  * Thrown when a runner execution times out.
@@ -21,17 +21,21 @@ export class RunnerTimeoutError extends RunnerError {
   runnerName: string;
   timeout: number;
 
-  constructor(runnerName: string, timeout: number, options?: { cause?: unknown }) {
+  constructor(
+    runnerName: string,
+    timeout: number,
+    options?: { cause?: unknown }
+  ) {
     super(`Runner "${runnerName}" exceeded timeout of ${timeout}ms`, {
       cause: options?.cause,
     });
-    this.name = 'RunnerTimeoutError';
+    this.name = "RunnerTimeoutError";
     this.runnerName = runnerName;
     this.timeout = timeout;
   }
 
   static is(value: unknown): value is RunnerTimeoutError {
-    return isError(value) && value.name === 'RunnerTimeoutError';
+    return isError(value) && value.name === "RunnerTimeoutError";
   }
 }
 
@@ -57,16 +61,16 @@ export class RunnerExecutionError extends RunnerError {
   declare cause: Error;
 
   constructor(runnerName: string, error: Error | unknown) {
-    const causeError = error instanceof Error ? error : new Error(String(error));
+    const causeError =
+      error instanceof Error ? error : new Error(String(error));
     super(`Runner "${runnerName}" execution failed: ${causeError.message}`, {
       cause: causeError,
     });
-    this.name = 'RunnerExecutionError';
+    this.name = "RunnerExecutionError";
     this.runnerName = runnerName;
   }
 
   static is(value: unknown): value is RunnerExecutionError {
-    return isError(value) && value.name === 'RunnerExecutionError';
+    return isError(value) && value.name === "RunnerExecutionError";
   }
 }
-

@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "runners": "workspace:*",
-    "@runners/http": "workspace:*",
-    "@runner/cli": "workspace:*"
+    "@runners/http": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

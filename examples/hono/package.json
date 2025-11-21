@@ -12,8 +12,6 @@
     "lint": "pnpm biome lint ./src"
   },
   "dependencies": {
-    "@runners/http": "workspace:*",
-    "@runners/nitro": "workspace:*",
     "runners": "workspace:*"
   },
   "devDependencies": {

@@ -9,7 +9,7 @@ export default defineConfig({
   lib: [
     {
       bundle: true,
-      dts: false, // Disable DTS generation - nitro types are peer dependency
+      dts: true,
       format: "esm",
     },
   ],

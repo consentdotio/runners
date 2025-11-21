@@ -24,8 +24,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@runners/errors": "workspace:*",
-    "runners": "workspace:*"
+    "@runners/core": "workspace:*",
+    "@runners/errors": "workspace:*"
   },
   "devDependencies": {
     "@rslib/core": "^0.18.0",

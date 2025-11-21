@@ -46,7 +46,8 @@ export const globalFlags: CliFlag[] = [
   },
   {
     names: ["--no-exit"],
-    description: "Don't exit after tests complete (useful for testing/debugging).",
+    description:
+      "Don't exit after tests complete (useful for testing/debugging).",
     type: "boolean",
     expectsValue: false,
   },

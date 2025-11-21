@@ -2,8 +2,8 @@ import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import enhancedResolveOriginal from "enhanced-resolve";
 import type { Plugin } from "esbuild";
-import { useRunnerPattern, useRunnerFunctionPattern } from "runners";
-import { normalizePath } from "runners";
+import { useRunnerPattern, useRunnerFunctionPattern } from "@runners/core";
+import { normalizePath } from "@runners/core";
 import { applySwcTransform } from "./apply-swc-transform.js";
 
 const enhancedResolve = promisify(

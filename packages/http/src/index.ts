@@ -1,4 +1,4 @@
-import { runRunners, getRunnerInfo } from "runners";
+import { runRunners, getRunnerInfo } from "@runners/core";
 import { RunnerNotFoundError } from "@runners/errors";
 import type {
   CreateHttpRunnerOptions,

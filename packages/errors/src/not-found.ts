@@ -1,4 +1,4 @@
-import { RunnerError, isError } from './base';
+import { RunnerError, isError } from "./base";
 
 /**
  * Thrown when one or more requested runners are not found.
@@ -23,17 +23,13 @@ export class RunnerNotFoundError extends RunnerError {
   availableRunners: string[];
 
   constructor(missingRunners: string[], availableRunners: string[]) {
-    super(
-      `One or more runners not found: ${missingRunners.join(', ')}`,
-      {}
-    );
-    this.name = 'RunnerNotFoundError';
+    super(`One or more runners not found: ${missingRunners.join(", ")}`, {});
+    this.name = "RunnerNotFoundError";
     this.missingRunners = missingRunners;
     this.availableRunners = availableRunners;
   }
 
   static is(value: unknown): value is RunnerNotFoundError {
-    return isError(value) && value.name === 'RunnerNotFoundError';
+    return isError(value) && value.name === "RunnerNotFoundError";
   }
 }
-

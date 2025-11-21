@@ -1,4 +1,4 @@
-import { RunnerError, isError } from './base';
+import { RunnerError, isError } from "./base";
 
 /**
  * Thrown when runner discovery fails.
@@ -24,19 +24,19 @@ export class RunnerDiscoveryError extends RunnerError {
     const errorSummary = errors
       .slice(0, 3)
       .map((e) => `${e.file}: ${e.error}`)
-      .join('; ');
-    const more = errorCount > 3 ? ` and ${errorCount - 3} more` : '';
+      .join("; ");
+    const more = errorCount > 3 ? ` and ${errorCount - 3} more` : "";
 
     super(
       `Failed to discover runners: ${errorCount} file(s) failed to load. ${errorSummary}${more}`,
       {}
     );
-    this.name = 'RunnerDiscoveryError';
+    this.name = "RunnerDiscoveryError";
     this.errors = errors;
   }
 
   static is(value: unknown): value is RunnerDiscoveryError {
-    return isError(value) && value.name === 'RunnerDiscoveryError';
+    return isError(value) && value.name === "RunnerDiscoveryError";
   }
 }
 
@@ -68,12 +68,11 @@ export class NoRunnersFoundError extends RunnerError {
       `No runners found. Make sure you have runner files with "use runner" directive in ${pattern}`,
       {}
     );
-    this.name = 'NoRunnersFoundError';
+    this.name = "NoRunnersFoundError";
     this.pattern = pattern;
   }
 
   static is(value: unknown): value is NoRunnersFoundError {
-    return isError(value) && value.name === 'NoRunnersFoundError';
+    return isError(value) && value.name === "NoRunnersFoundError";
   }
 }
-

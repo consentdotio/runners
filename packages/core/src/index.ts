@@ -11,7 +11,7 @@ export {
 } from "./types";
 
 // Re-export config
-export { defineConfig, type RunnersConfig } from "./config";
+export { defineConfig, type RunnersConfig } from "@runners/config";
 
 // Export runner discovery utilities
 export { discoverRunners, clearDiscoveryCache } from "./utils/discover";

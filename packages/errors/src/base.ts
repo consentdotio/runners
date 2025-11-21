@@ -4,12 +4,14 @@
  * This is needed for error classes that can be used in VM contexts where
  * Node.js imports are not available.
  */
-export function isError(value: unknown): value is { name: string; message: string } {
+export function isError(
+  value: unknown
+): value is { name: string; message: string } {
   return (
-    typeof value === 'object' &&
+    typeof value === "object" &&
     value !== null &&
-    'name' in value &&
-    'message' in value
+    "name" in value &&
+    "message" in value
   );
 }
 
@@ -36,7 +38,7 @@ export class RunnerError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, { cause: options?.cause });
     this.cause = options?.cause;
-    this.name = 'RunnerError';
+    this.name = "RunnerError";
 
     if (options?.cause instanceof Error) {
       this.stack = `${this.stack}\nCaused by: ${options.cause.stack}`;
@@ -44,7 +46,6 @@ export class RunnerError extends Error {
   }
 
   static is(value: unknown): value is RunnerError {
-    return isError(value) && value.name === 'RunnerError';
+    return isError(value) && value.name === "RunnerError";
   }
 }
-

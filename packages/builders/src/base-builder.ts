@@ -2,7 +2,11 @@ import { dirname, join, relative, resolve } from "node:path";
 import { build, context } from "esbuild";
 import chalk from "chalk";
 import { glob } from "glob";
-import { getTsConfigOptions, normalizePath, writeDebugFile } from "runners";
+import {
+  getTsConfigOptions,
+  normalizePath,
+  writeDebugFile,
+} from "@runners/core";
 import type { RunnerBuilderConfig } from "./types";
 import { createDiscoverRunnersPlugin } from "./discover-plugin";
 import { createSwcPlugin } from "./swc-esbuild-plugin";

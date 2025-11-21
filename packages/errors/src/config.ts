@@ -1,4 +1,4 @@
-import { RunnerError, isError } from './base';
+import { RunnerError, isError } from "./base";
 
 /**
  * Thrown when runner configuration is invalid.
@@ -22,11 +22,10 @@ export class RunnerConfigError extends RunnerError {
     super(`Configuration error: ${message}`, {
       cause: options?.cause,
     });
-    this.name = 'RunnerConfigError';
+    this.name = "RunnerConfigError";
   }
 
   static is(value: unknown): value is RunnerConfigError {
-    return isError(value) && value.name === 'RunnerConfigError';
+    return isError(value) && value.name === "RunnerConfigError";
   }
 }
-

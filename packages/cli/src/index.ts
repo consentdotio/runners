@@ -11,8 +11,7 @@ import { globalFlags } from "./context/parser";
 import type { CliCommand } from "./context/types";
 import { formatLogMessage } from "./utils/logger";
 
-// Export utilities for programmatic use
-export { discoverRunners } from "runners";
+// Export CLI-specific utilities
 export { loadRunners } from "./utils/load-runners";
 
 // Define commands (using types from context)
