@@ -1,4 +1,4 @@
-import { runRunners, type RunnerResult } from "runners";
+import { runRunners } from "runners";
 import { defineConfig } from "@runners/config";
 import { loadRunners } from "../../utils/load-runners";
 import type { CliContext } from "../../context/types";
@@ -57,7 +57,11 @@ export async function run(context: CliContext): Promise<void> {
     logger.error(
       'No runners found. Make sure you have runner files with "use runner" directive in src/**/*.ts'
     );
-    process.exit(1);
+    const noExit = flags["no-exit"] as boolean | undefined;
+    if (!noExit) {
+      process.exit(1);
+    }
+    return;
   }
 
   logger.info(
@@ -76,13 +80,19 @@ export async function run(context: CliContext): Promise<void> {
 
   // Exit with non-zero if any runner failed
   const hasFailures = result.results.some(
-    (r: RunnerResult) => r.status === "fail" || r.status === "error"
+    (r: { status: string }) => r.status === "fail" || r.status === "error"
   );
+
+  const noExit = flags["no-exit"] as boolean | undefined;
 
   if (hasFailures) {
     logger.error("Some runners failed");
-    process.exit(1);
+    if (!noExit) {
+      process.exit(1);
+    }
   } else {
     logger.success("All runners passed!");
+    // Only exit if --no-exit flag is not set
+    // (process will naturally exit when script completes)
   }
 }

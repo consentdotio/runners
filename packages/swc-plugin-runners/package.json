@@ -20,7 +20,8 @@
     "build": "node build.js",
     "clean": "cargo clean",
     "prepublishOnly": "pnpm build",
-    "test": "cargo test"
+    "test": "cargo test",
+    "test:update-stderr": "node scripts/update-stderr.js"
   },
   "peerDependencies": {
     "@swc/core": "^1.11.24"
@@ -30,3 +31,4 @@
   },
   "preferUnplugged": true
 }
+

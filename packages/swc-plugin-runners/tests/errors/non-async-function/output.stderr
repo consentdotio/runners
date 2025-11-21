@@ -1,0 +1,7 @@
+  x Functions marked with "use runner" must be async functions
+   ,-[input.js:2:1]
+ 1 | export function badRunner(ctx) {
+ 2 |   "use runner";
+   :   ^^^^^^^^^^^^^
+ 3 |   return { name: "test", status: "pass" };
+   `----

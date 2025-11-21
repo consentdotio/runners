@@ -1,0 +1,7 @@
+  x "use runer" looks like a typo. Did you mean "use runner"?
+   ,-[input.js:2:1]
+ 1 | export async function myRunner(ctx) {
+ 2 |   "use runer";
+   :   ^^^^^^^^^^^^
+ 3 |   return { name: "test", status: "pass" };
+   `----

@@ -12,9 +12,10 @@ const __dirname = dirname(__filename);
 
 // Try multiple paths to find the CLI
 const paths = [
-  "@runner/cli/dist/index.mjs", // When installed via npm/pnpm (package resolution)
+  "@runner/cli", // When installed via npm/pnpm (package resolution - uses package.json exports)
+  "@runner/cli/dist/index.mjs", // Fallback: explicit path
   join(__dirname, "../cli/dist/index.mjs"), // Workspace development: packages/core/dist -> packages/cli/dist
-  join(__dirname, "../../cli/dist/index.mjs"), // Alternative: packages/core/dist -> packages/cli/dist
+  join(__dirname, "../../packages/cli/dist/index.mjs"), // Alternative: from workspace root
 ];
 
 (async () => {

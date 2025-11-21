@@ -28,17 +28,17 @@ export async function getTsConfigOptions(
   if (tsJsConfig) {
     try {
       const rawJson = await readFile(tsJsConfig, "utf-8");
-      const parsed: null | {
+      const parsed = parse(rawJson) as {
         compilerOptions?: {
-          paths?: Record<string, string[]> | undefined;
+          paths?: Record<string, string[]>;
           baseUrl?: string;
         };
-      } = parse(rawJson) as any;
+      } | null;
 
-      if (parsed) {
-        options.paths = parsed.compilerOptions?.paths;
+      if (parsed?.compilerOptions) {
+        options.paths = parsed.compilerOptions.paths;
 
-        if (parsed.compilerOptions?.baseUrl) {
+        if (parsed.compilerOptions.baseUrl) {
           options.baseUrl = resolve(workingDir, parsed.compilerOptions.baseUrl);
         } else {
           options.baseUrl = workingDir;

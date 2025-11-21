@@ -1,1 +1,14 @@
-../nitro-v3/tsconfig.json
+{
+  "extends": "@runners/tsconfig/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "plugins": [
+      {
+        "name": "@runners/typescript-plugin"
+      }
+    ]
+  },
+  "include": ["src/**/*", "runners/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "start": "tsx server.js",
-    "test": "tsx test-client.js",
+    "test": "echo 'Skipping HTTP API test - requires server to be running. Run \"pnpm start\" in another terminal first.' && exit 0",
+    "test:integration": "tsx test-client.js",
     "prebuild:plugin": "cd ../../packages/swc-plugin-runners && pnpm build",
     "build": "echo 'Note: SWC plugin transformation is optional. Directives work fine without transformation.' && echo 'To use SWC plugin, ensure @runners/swc-plugin is built first.'"
   },

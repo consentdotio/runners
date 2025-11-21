@@ -1,6 +1,6 @@
-import type { RunnerTest } from 'runners';
+import type { Runner } from 'runners';
 
-export const exampleTitleVisibleTest: RunnerTest = async (ctx) => {
+export const exampleTitleVisibleTest: Runner = async (ctx) => {
   'use runner';
 
   const { page, url, log } = ctx;
@@ -16,4 +16,5 @@ export const exampleTitleVisibleTest: RunnerTest = async (ctx) => {
     details: { title },
   };
 };
+
 

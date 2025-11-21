@@ -1,0 +1,33 @@
+{
+  "name": "@runners/errors",
+  "description": "A package for standardizing errors in Runners SDK",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "rslib build",
+    "clean": "tsc --build --clean && rm -r dist ||:",
+    "dev": "rslib build --watch",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@rslib/core": "^0.18.0",
+    "@runners/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
+

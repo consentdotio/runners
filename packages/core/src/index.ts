@@ -6,6 +6,8 @@ export {
   type RunRunnersOptions,
   type RunRunnersResult,
   type RunStatus,
+  type StandardSchemaV1,
+  validateStandardSchema,
 } from "./types";
 
 // Re-export config

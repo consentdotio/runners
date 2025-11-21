@@ -1,4 +1,5 @@
 import { runRunners, getRunnerInfo } from "runners";
+import { RunnerNotFoundError } from "@runners/errors";
 import type {
   CreateHttpRunnerOptions,
   HttpRunnerRequest,
@@ -13,6 +14,7 @@ import type {
  * @param options.region - Optional region identifier
  * @returns HTTP request handler function
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: HTTP handler needs to handle multiple request types and validation
 export function createHttpRunner(
   options: CreateHttpRunnerOptions
 ): (req: Request) => Promise<Response> {
@@ -106,19 +108,23 @@ export function createHttpRunner(
         }
 
         const runner = runners[runnerName];
-        if (!runner) {
-          missingRunners.push(runnerName);
-        } else {
+        if (runner) {
           resolvedRunners.push(runner);
+        } else {
+          missingRunners.push(runnerName);
         }
       }
 
       if (missingRunners.length > 0) {
+        const error = new RunnerNotFoundError(
+          missingRunners,
+          Object.keys(runners)
+        );
         return new Response(
           JSON.stringify({
-            error: "One or more runners not found",
-            missingRunners,
-            availableRunners: Object.keys(runners),
+            error: error.message,
+            missingRunners: error.missingRunners,
+            availableRunners: error.availableRunners,
           }),
           {
             status: 400,

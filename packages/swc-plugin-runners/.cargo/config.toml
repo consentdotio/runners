@@ -1,5 +1,8 @@
-# Build aliases for WASM targets
-[alias]
-# Alias to build plugin binary for wasm32-unknown-unknown target
-build-wasm32 = "build --release --target wasm32-unknown-unknown"
+[build]
+target-dir = "target"
 
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "target-feature=+bulk-memory,+mutable-globals"]
+
+[alias]
+build-wasm32 = "build --target wasm32-unknown-unknown --release"

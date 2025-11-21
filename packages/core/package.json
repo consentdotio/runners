@@ -32,6 +32,8 @@
   },
   "dependencies": {
     "@runners/config": "workspace:*",
+    "@runners/errors": "workspace:*",
+    "@standard-schema/spec": "^1.0.0",
     "comment-json": "^4.4.1",
     "find-up": "^7.0.0",
     "glob": "^11.0.0",

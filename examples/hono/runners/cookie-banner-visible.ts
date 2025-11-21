@@ -47,7 +47,9 @@ export const cookieBannerVisibleTest: Runner<
       elementCount = count;
       matchedSelector = selector;
       visible = await elements.first().isVisible({ timeout: finalTimeout });
-      if (visible) break;
+      if (visible) {
+        break;
+      }
     }
   }
 

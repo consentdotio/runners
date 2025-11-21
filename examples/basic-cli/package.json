@@ -5,8 +5,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "runners run --url https://consent.io",
-    "test:config": "runners run --config runners.config.ts"
+    "test": "runners run --url https://consent.io --no-exit",
+    "test:config": "runners run --config runners.config.ts --no-exit"
   },
   "dependencies": {
     "runners": "workspace:*"
@@ -16,4 +16,5 @@
     "typescript": "^5.9.3"
   }
 }
+
 

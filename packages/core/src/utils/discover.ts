@@ -1,5 +1,6 @@
 import { glob } from "glob";
 import { pathToFileURL } from "node:url";
+import { RunnerDiscoveryError } from "@runners/errors";
 import type { Runner } from "../types";
 import { hasAnyDirective } from "./directive-detector";
 import { normalizePath } from "./debug";
@@ -89,6 +90,11 @@ export async function discoverRunners(
       console.warn(
         `[runners] ${errors.length} file(s) failed to load (see errors above)`
       );
+      // Throw error if all files failed (but allow partial success)
+      // This maintains backward compatibility while providing error handling
+      if (errors.length === runnerFiles.length && runners.size === 0) {
+        throw new RunnerDiscoveryError(errors);
+      }
     }
   }
 
