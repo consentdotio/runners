@@ -1,0 +1,38 @@
+{
+  "name": "@runners/nitro-orchestrator",
+  "version": "0.0.0",
+  "description": "Nitro integration for orchestrator",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "clean": "tsc --build --clean && rm -rf dist ||:",
+    "dev": "rslib build --watch",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@runners/orchestrator": "workspace:*"
+  },
+  "devDependencies": {
+    "@rslib/core": "^0.18.0",
+    "@runners/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "nitro": "^3.0.0"
+  }
+}

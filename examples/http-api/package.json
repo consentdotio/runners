@@ -12,8 +12,7 @@
     "build": "echo 'Note: SWC plugin transformation is optional. Directives work fine without transformation.' && echo 'To use SWC plugin, ensure @runners/swc-plugin is built first.'"
   },
   "dependencies": {
-    "runners": "workspace:*",
-    "@runners/http": "workspace:*"
+    "runners": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

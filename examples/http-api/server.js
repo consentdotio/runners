@@ -7,7 +7,7 @@
  * for use by an orchestrator or workflow engine.
  */
 
-import { createHttpRunner } from '@runners/http';
+import { createOrpcRunnerHandler } from 'runners/http';
 import { discoverRunners } from 'runners';
 
 const PORT = process.env.PORT || 3000;
@@ -18,7 +18,7 @@ const runnersMap = await discoverRunners('src/runners/**/*.ts');
 const runners = Object.fromEntries(runnersMap);
 
 // Create the HTTP handler
-const handler = createHttpRunner({
+const handler = createOrpcRunnerHandler({
   runners,
   region: REGION,
 });

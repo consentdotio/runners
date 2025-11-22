@@ -1,0 +1,51 @@
+{
+  "name": "@runners/orchestrator",
+  "version": "0.0.0",
+  "description": "Workflow orchestrator for running tests across multiple sites and regions",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./workflows": {
+      "types": "./dist/workflows/index.d.ts",
+      "default": "./dist/workflows/index.mjs"
+    },
+    "./routers": {
+      "types": "./dist/routers/index.d.ts",
+      "default": "./dist/routers/index.mjs"
+    }
+  },
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "clean": "tsc --build --clean && rm -r dist ||:",
+    "dev": "rslib build --watch",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@orpc/client": "1.11.3",
+    "@orpc/openapi": "1.11.3",
+    "@orpc/server": "1.11.3",
+    "@orpc/zod": "1.11.3",
+    "@runners/contracts": "workspace:*",
+    "@runners/core": "workspace:*",
+    "nanoid": "^5.1.6",
+    "workflow": "4.0.1-beta.18",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@rslib/core": "^0.18.0",
+    "@runners/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "@runners/example-hono",
+  "name": "@runners/example-nitro-orchestrator",
   "private": true,
   "type": "module",
   "version": "0.0.0",
@@ -12,15 +12,13 @@
     "lint": "pnpm biome lint ./src"
   },
   "dependencies": {
-    "runners": "workspace:*",
-    "@runners/http": "workspace:*"
+    "runners": "workspace:*"
   },
   "devDependencies": {
     "@runners/typescript-plugin": "workspace:*",
-    "@runners/tsconfig": "workspace:*",
     "@oxc-transform/binding-darwin-arm64": "^0.98.0",
     "@types/node": "catalog:",
-    "hono": "^4.9.10",
     "nitro": "catalog:"
   }
 }
+

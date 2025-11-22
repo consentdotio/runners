@@ -1,0 +1,43 @@
+{
+  "name": "@runners/builders",
+  "version": "0.0.0",
+  "description": "Build-time bundling for runners",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "clean": "tsc --build --clean && rm -r dist ||:",
+    "dev": "rslib build --watch",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ./src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@runners/config": "workspace:*",
+    "@runners/core": "workspace:*",
+    "@runners/swc-plugin": "workspace:*",
+    "@swc/core": "^1.15.3",
+    "builtin-modules": "^5.0.0",
+    "chalk": "^5.6.2",
+    "enhanced-resolve": "^5.18.2",
+    "esbuild": "^0.27.0",
+    "glob": "^13.0.0"
+  },
+  "devDependencies": {
+    "@rslib/core": "^0.18.0",
+    "@runners/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
