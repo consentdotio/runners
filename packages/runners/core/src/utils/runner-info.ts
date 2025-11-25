@@ -51,7 +51,7 @@ export function getRunnerInfo(
   if (usageExample) {
     result.usage = {
       method: usageExample.method || "POST",
-      endpoint: usageExample.endpoint || "/api/runner",
+      endpoint: usageExample.endpoint || "/api/runner/execute",
       example: {
         url: usageExample.exampleUrl || "https://example.com",
         runners: runnerNames.slice(0, 2), // Show first 2 as example

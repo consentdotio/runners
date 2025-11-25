@@ -34,12 +34,12 @@ node .output/server/index.mjs
 
 ## API Endpoints
 
-### GET /api/runner
+### GET /api/runner/info
 
 Get information about all available runners:
 
 ```bash
-curl http://localhost:3000/api/runner
+curl http://localhost:3000/api/runner/info
 ```
 
 Returns:
@@ -50,7 +50,7 @@ Returns:
   "region": "us-east-1",
   "usage": {
     "method": "POST",
-    "endpoint": "/api/runner",
+    "endpoint": "/api/runner/execute",
     "example": {
       "url": "https://example.com",
       "runners": ["exampleTitleVisibleTest", "cookieBannerVisibleTest"]
@@ -59,7 +59,7 @@ Returns:
 }
 ```
 
-### POST /api/runner
+### POST /api/runner/execute
 
 Run runners via HTTP API. Accepts JSON body:
 
@@ -70,6 +70,16 @@ Run runners via HTTP API. Accepts JSON body:
   "runId": "optional-run-id",
   "region": "optional-region"
 }
+```
+
+Example curl:
+```bash
+curl -X POST http://localhost:3000/api/runner/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "runners": ["exampleTitleVisibleTest"]
+  }'
 ```
 
 ### GET /health

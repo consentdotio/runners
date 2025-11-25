@@ -9,14 +9,12 @@ import { discoverAvailableRunners, getRunnersByName } from "../runners";
 import { normalizeJobResult } from "../utils";
 
 /**
- * Execute a sandbox job step
- * Uses 'use step' directive for Workflow
+ * Execute a local job step
  * 
  * @param job - Job definition
  * @returns Job result
  */
-export async function runSandboxStep(job: Job): Promise<JobResult> {
-  "use step";
+export async function runLocalStep(job: Job): Promise<JobResult> {
 
   const startedAt = new Date();
 
@@ -25,7 +23,7 @@ export async function runSandboxStep(job: Job): Promise<JobResult> {
     const discoveredRunners = await discoverAvailableRunners();
 
     // Get the specific runners requested for this job
-    const runnerNames = job.runners.map((r) => r.pattern);
+    const runnerNames = job.runners.map((r) => r.name);
     const runners = getRunnersByName(runnerNames, discoveredRunners);
 
     // Wrap runners to pass input (each runner can have its own input)
@@ -34,11 +32,8 @@ export async function runSandboxStep(job: Job): Promise<JobResult> {
       if (!runnerConfig) {
         throw new Error(`Runner config not found for index ${index}`);
       }
-      // Merge site URL with runner-specific input
-      const runnerInput = {
-        url: job.site,
-        ...runnerConfig.input,
-      };
+      // Use runner's input directly (URL should be in input.url)
+      const runnerInput = runnerConfig.input || {};
 
       return async (ctx: RunnerContext): Promise<RunnerResult<unknown>> =>
         runner(ctx, runnerInput);
@@ -49,6 +44,7 @@ export async function runSandboxStep(job: Job): Promise<JobResult> {
       runners: runnersToRun as Runner[],
       region: job.region,
       runId: job.runId,
+      timeout: job.timeout,
     });
 
     const completedAt = new Date();

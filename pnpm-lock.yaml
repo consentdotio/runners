@@ -101,6 +101,9 @@ importers:
       '@oxc-transform/binding-darwin-arm64':
         specifier: ^0.98.0
         version: 0.98.0
+      '@runners/tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/shared/tsconfig
       '@runners/typescript-plugin':
         specifier: workspace:*
         version: link:../../packages/runners/typescript-plugin
@@ -216,9 +219,12 @@ importers:
       '@runners/orchestrator':
         specifier: workspace:*
         version: link:../orchestrator
+      '@workflow/nitro':
+        specifier: 4.0.1-beta.18
+        version: 4.0.1-beta.18(@aws-sdk/client-sts@3.936.0)(@swc/helpers@0.5.17)
       nitro:
         specifier: ^3.0.0
-        version: 3.0.0(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.936.0))(chokidar@4.0.3)(lru-cache@11.2.2)(vite@7.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6))
+        version: 3.0.0(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.936.0)))(chokidar@4.0.3)(lru-cache@11.2.2)(vite@7.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6))
     devDependencies:
       '@rslib/core':
         specifier: ^0.18.0
@@ -253,9 +259,6 @@ importers:
       '@runners/core':
         specifier: workspace:*
         version: link:../../runners/core
-      nanoid:
-        specifier: ^5.1.6
-        version: 5.1.6
       workflow:
         specifier: 4.0.1-beta.18
         version: 4.0.1-beta.18(@aws-sdk/client-sts@3.936.0)(@swc/helpers@0.5.17)(next@16.0.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
@@ -7358,6 +7361,15 @@ snapshots:
     optionalDependencies:
       crossws: 0.4.1(srvx@0.8.16)
 
+  h3@2.0.1-rc.2(crossws@0.4.1(srvx@0.9.6)):
+    dependencies:
+      cookie-es: 2.0.0
+      fetchdts: 0.1.7
+      rou3: 0.7.10
+      srvx: 0.8.16
+    optionalDependencies:
+      crossws: 0.4.1(srvx@0.9.6)
+
   h3@2.0.1-rc.5(crossws@0.4.1(srvx@0.9.6)):
     dependencies:
       rou3: 0.7.10
@@ -7611,7 +7623,7 @@ snapshots:
 
   nf3@0.1.12: {}
 
-  nitro@3.0.0(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.936.0))(chokidar@4.0.3)(lru-cache@11.2.2)(vite@7.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)):
+  nitro@3.0.0(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.936.0)))(chokidar@4.0.3)(lru-cache@11.2.2)(vite@7.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)):
     dependencies:
       consola: 3.4.2
       cookie-es: 2.0.0
@@ -7620,6 +7632,56 @@ snapshots:
       esbuild: 0.25.12
       fetchdts: 0.1.7
       h3: 2.0.1-rc.2(crossws@0.4.1(srvx@0.8.16))
+      jiti: 2.6.1
+      nf3: 0.1.12
+      ofetch: 1.5.1
+      ohash: 2.0.11
+      rendu: 0.0.6
+      rollup: 4.53.3
+      srvx: 0.8.16
+      undici: 7.16.0
+      unenv: 2.0.0-rc.21
+      unstorage: 2.0.0-alpha.3(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.936.0)))(chokidar@4.0.3)(db0@0.3.4)(lru-cache@11.2.2)(ofetch@1.5.1)
+    optionalDependencies:
+      vite: 7.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@deno/kv'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@upstash/redis'
+      - '@vercel/blob'
+      - '@vercel/functions'
+      - '@vercel/kv'
+      - aws4fetch
+      - better-sqlite3
+      - chokidar
+      - drizzle-orm
+      - idb-keyval
+      - ioredis
+      - lru-cache
+      - mongodb
+      - mysql2
+      - sqlite3
+      - uploadthing
+
+  nitro@3.0.0(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.936.0))(chokidar@4.0.3)(lru-cache@11.2.2)(vite@7.2.4(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)):
+    dependencies:
+      consola: 3.4.2
+      cookie-es: 2.0.0
+      crossws: 0.4.1(srvx@0.8.16)
+      db0: 0.3.4
+      esbuild: 0.25.12
+      fetchdts: 0.1.7
+      h3: 2.0.1-rc.2(crossws@0.4.1(srvx@0.9.6))
       jiti: 2.6.1
       nf3: 0.1.12
       ofetch: 1.5.1
@@ -8333,6 +8395,14 @@ snapshots:
       acorn: 8.15.0
       picomatch: 4.0.3
       webpack-virtual-modules: 0.6.2
+
+  unstorage@2.0.0-alpha.3(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.936.0)))(chokidar@4.0.3)(db0@0.3.4)(lru-cache@11.2.2)(ofetch@1.5.1):
+    optionalDependencies:
+      '@vercel/functions': 3.3.3(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.936.0))
+      chokidar: 4.0.3
+      db0: 0.3.4
+      lru-cache: 11.2.2
+      ofetch: 1.5.1
 
   unstorage@2.0.0-alpha.3(@vercel/functions@3.3.3(@aws-sdk/credential-provider-web-identity@3.936.0))(chokidar@4.0.3)(db0@0.3.4)(lru-cache@11.2.2)(ofetch@1.5.1):
     optionalDependencies:

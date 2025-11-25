@@ -3,7 +3,7 @@ import type { RunnerResult } from "@runners/core";
 /**
  * Run mode - determines how jobs are executed
  */
-export type RunMode = "sandbox" | "geo-playwright";
+export type RunMode = "local" | "remote";
 
 /**
  * Job state tracking
@@ -11,10 +11,10 @@ export type RunMode = "sandbox" | "geo-playwright";
 export type JobState = "queued" | "running" | "completed" | "failed" | "timed_out";
 
 /**
- * Runner configuration with pattern, region, and input schema
+ * Runner configuration with name, region, and input schema
  */
 export type RunnerConfig = {
-  pattern: string;
+  name: string;
   region?: string;
   input?: Record<string, unknown>;
 };
@@ -23,7 +23,6 @@ export type RunnerConfig = {
  * Run request input
  */
 export type RunRequest = {
-  sites: string[];
   runners: RunnerConfig[];
   mode: RunMode;
   concurrency?: number;
@@ -37,10 +36,10 @@ export type RunRequest = {
  */
 export type Job = {
   jobId: string;
-  site: string;
   region?: string;
   runners: RunnerConfig[];
   runId: string;
+  timeout?: number;
 };
 
 /**
@@ -48,7 +47,6 @@ export type Job = {
  */
 export type JobResult = {
   jobId: string;
-  site: string;
   region?: string;
   state: JobState;
   results: RunnerResult[];
@@ -90,7 +88,7 @@ export type RunSummary = {
 };
 
 /**
- * Stored run metadata (for Workflow world storage)
+ * Stored run metadata
  */
 export type RunRecord = {
   runId: string;

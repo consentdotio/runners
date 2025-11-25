@@ -4,7 +4,9 @@ import { onError } from "@orpc/server";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { createRunnerRouter } from "./orpc";
 import type { CreateHttpRunnerOptions } from "./types";
+import { enhanceRunnerOpenAPISpec } from "./openapi-enhancer";
 import {
+  runnerContract,
   RunRunnersRequestSchema,
   RunRunnersResponseSchema,
   RunnerConfigRequestSchema,
@@ -22,7 +24,20 @@ export function createOrpcRunnerHandler(
   const handler = new OpenAPIHandler(router, {
     interceptors: [
       onError((error: unknown) => {
-        console.error("[runner] Error:", error);
+        if (
+          error &&
+          typeof error === "object" &&
+          "code" in error &&
+          error.code === "BAD_REQUEST" &&
+          "data" in error &&
+          error.data &&
+          typeof error.data === "object" &&
+          "issues" in error.data
+        ) {
+          console.error("[runner] Validation error:", JSON.stringify(error.data, null, 2));
+        } else {
+          console.error("[runner] Error:", error);
+        }
       }),
     ],
     plugins: [],
@@ -34,6 +49,34 @@ export function createOrpcRunnerHandler(
     ],
   });
 
+  /**
+   * Unwrap oRPC client's json wrapper if present (for compact inputStructure compatibility)
+   */
+  async function unwrapRequestIfNeeded(req: Request): Promise<Request> {
+    if (req.method !== "POST") {
+      return req;
+    }
+
+    try {
+      const body = await req.clone().json();
+      // Check if body is wrapped in "json" field (oRPC client default format)
+      if (body && typeof body === "object" && "json" in body && Object.keys(body).length === 1) {
+        // Unwrap and create new request with unwrapped body
+        const unwrappedBody = body.json;
+        return new Request(req.url, {
+          method: req.method,
+          headers: req.headers,
+          body: JSON.stringify(unwrappedBody),
+        });
+      }
+    } catch (e) {
+      // If parsing fails, use original request
+      console.log("[runner/http] Failed to parse request body for unwrapping:", e);
+    }
+
+    return req;
+  }
+
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     
@@ -41,8 +84,9 @@ export function createOrpcRunnerHandler(
     console.log(`[runner/http] ${req.method} ${url.pathname}`);
 
     // Serve OpenAPI spec - check FIRST before API handler
+    // Use contract directly (not router) to ensure correct paths are used
     if (url.pathname === "/api/runner/spec.json") {
-      const spec = await openAPIGenerator.generate(router, {
+      let spec = await openAPIGenerator.generate(runnerContract, {
         info: {
           title: "Runners HTTP API",
           version: "1.0.0",
@@ -58,6 +102,9 @@ export function createOrpcRunnerHandler(
           RunnerResult: { schema: RunnerResultSchema },
         },
       });
+
+      // Enhance spec with runner-specific information
+      spec = await enhanceRunnerOpenAPISpec(spec, options);
 
       return Response.json(spec);
     }
@@ -91,10 +138,13 @@ export function createOrpcRunnerHandler(
     }
 
     // Handle API requests
-    // The contract routes are at /runner, so with prefix /api they become /api/runner
-    // But implement() creates routes at /execute and /info based on property names.
-    // We need to use prefix /api/runner to match the contract paths.
-    const { response, matched } = await handler.handle(req, {
+    // Contract routes are /execute and /info, with prefix /api/runner they become:
+    // POST /api/runner/execute and GET /api/runner/info
+    
+    // Unwrap oRPC client's json wrapper if present (for compact inputStructure compatibility)
+    const requestToHandle = await unwrapRequestIfNeeded(req);
+    
+    const { response, matched } = await handler.handle(requestToHandle, {
       prefix: "/api/runner",
       context: {},
     });

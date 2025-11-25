@@ -1,3 +1,4 @@
+import { oc } from "@orpc/contract";
 import { z } from "zod";
 
 /**
@@ -35,9 +36,9 @@ export const RunStatusSchema = z.object({
 });
 
 /**
- * Zod schema for RunnerResult (re-exported from @runners/core types)
+ * Zod schema for RunnerResult
  */
-export const RunnerResultSchema = z.object({
+const RunnerResultSchema = z.object({
   name: z.string(),
   status: z.enum(["pass", "fail", "error"]),
   details: z.record(z.string(), z.unknown()).optional(),
@@ -48,7 +49,7 @@ export const RunnerResultSchema = z.object({
 /**
  * Zod schema for JobResult validation
  */
-export const JobResultSchema = z.object({
+const JobResultSchema = z.object({
   jobId: z.string(),
   region: z.string().optional(),
   state: z.enum(["queued", "running", "completed", "failed", "timed_out"]),
@@ -58,7 +59,6 @@ export const JobResultSchema = z.object({
   completedAt: z.coerce.date().optional(),
   durationMs: z.number().optional(),
 });
-
 
 /**
  * Zod schema for RunSummary validation
@@ -77,4 +77,69 @@ export const RunSummarySchema = z.object({
   completedAt: z.coerce.date().optional(),
   durationMs: z.number().optional(),
 });
+
+/**
+ * Base contract with detailed input structure for all orchestrator routes
+ */
+const base = oc.$route({ inputStructure: "compact" });
+
+/**
+ * Contract for submitting a new run request
+ */
+export const submitRun = base
+  .route({
+    method: "POST",
+    path: "/orchestrator",
+    summary: "Submit a new run request",
+    tags: ["Orchestrator"],
+  })
+  .input(RunRequestSchema)
+  .output(
+    z.object({
+      runId: z.string(),
+    })
+  );
+
+/**
+ * Contract for getting run status by runId
+ */
+export const getRunStatus = base
+  .route({
+    method: "GET",
+    path: "/orchestrator/{runId}/status",
+    summary: "Get run status by runId",
+    tags: ["Orchestrator"],
+  })
+  .input(
+    z.object({
+      runId: z.string().min(1),
+    })
+  )
+  .output(RunStatusSchema);
+
+/**
+ * Contract for getting run results by runId
+ */
+export const getRunResults = base
+  .route({
+    method: "GET",
+    path: "/orchestrator/{runId}",
+    summary: "Get run results by runId",
+    tags: ["Orchestrator"],
+  })
+  .input(
+    z.object({
+      runId: z.string().min(1),
+    })
+  )
+  .output(RunSummarySchema);
+
+/**
+ * Orchestrator contract router
+ */
+export const orchestratorContract = {
+  submit: submitRun,
+  getStatus: getRunStatus,
+  getResults: getRunResults,
+};
 

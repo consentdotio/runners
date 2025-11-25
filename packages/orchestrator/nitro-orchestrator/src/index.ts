@@ -1,56 +1,67 @@
 import type { Nitro, NitroModule } from "nitro/types";
+import type { OrchestratorModuleOptions } from "./types";
+
+export type { OrchestratorModuleOptions } from "./types";
 
 export default {
   name: "runners/nitro-orchestrator",
-  async setup(nitro: Nitro) {
+  setup(nitro: Nitro) {
+
+    const options =
+      (nitro.options as unknown as { orchestrator?: OrchestratorModuleOptions })
+        .orchestrator || {};
+    
+    // Default patterns: scan both src/** and runners/**
+    let patterns: string[];
+    if (options.pattern) {
+      patterns = Array.isArray(options.pattern)
+        ? options.pattern
+        : [options.pattern];
+    } else {
+      patterns = ["src/**/*.ts", "runners/**/*.ts"];
+    }
+
+    // Externalize orchestrator package to prevent bundling
+    nitro.options.externals ||= {};
+    const externals = nitro.options.externals;
+    if (Array.isArray(externals.external)) {
+      if (!externals.external.includes("@runners/orchestrator")) {
+        externals.external.push("@runners/orchestrator");
+      }
+    } else {
+      // If externals.external is a function or undefined, convert to array
+      externals.external = ["@runners/orchestrator"];
+    }
+
+    // Configure remote runner URLs if provided
+    if (options.runners) {
+      // Set PLAYWRIGHT_RUNNERS environment variable for remote mode
+      // This is read by getRunnerUrl() in the orchestrator
+      process.env.PLAYWRIGHT_RUNNERS = JSON.stringify(options.runners);
+    }
+
     // Create virtual handler for orchestrator API
-    addOrchestratorHandler(nitro);
+    addOrchestratorHandler(nitro, patterns);
 
     // Add handlers for orchestrator routes
     nitro.options.handlers.push(
       {
-        route: "/api/run",
+        route: "/api/orchestrator",
         handler: "#orchestrator/handler",
       },
       {
-        route: "/api/run/*",
-        handler: "#orchestrator/handler",
-      },
-      {
-        route: "/docs",
-        handler: "#orchestrator/handler",
-      },
-      {
-        route: "/api/docs",
-        handler: "#orchestrator/handler",
-      },
-      {
-        route: "/spec.json",
-        handler: "#orchestrator/handler",
-      },
-      {
-        route: "/api/spec.json",
+        route: "/api/orchestrator/*",
         handler: "#orchestrator/handler",
       }
     );
   },
 } satisfies NitroModule;
 
-function addOrchestratorHandler(nitro: Nitro) {
-  if (!nitro.routing) {
-    // Nitro v2 (legacy)
-    nitro.options.virtual["#orchestrator/handler"] = /* js */ `
-    import { fromWebHandler } from "h3";
-    import { createOrchestratorHandler } from '@runners/orchestrator';
-    
-    const handler = createOrchestratorHandler();
-    
-    export default fromWebHandler(handler);
-  `;
-  } else {
+function addOrchestratorHandler(nitro: Nitro, _patterns: string[]) {
+  if (nitro.routing) {
     // Nitro v3+ (native web handlers)
     nitro.options.virtual["#orchestrator/handler"] = /* js */ `
-    import { createOrchestratorHandler } from '@runners/orchestrator';
+    import { createOrchestratorHandler } from 'runners/orchestrator';
     
     const handler = createOrchestratorHandler();
     
@@ -71,6 +82,16 @@ function addOrchestratorHandler(nitro: Nitro) {
         );
       }
     };
+  `;
+  } else {
+    // Nitro v2 (legacy)
+    nitro.options.virtual["#orchestrator/handler"] = /* js */ `
+    import { fromWebHandler } from "h3";
+    import { createOrchestratorHandler } from 'runners/orchestrator';
+    
+    const handler = createOrchestratorHandler();
+    
+    export default fromWebHandler(handler);
   `;
   }
 }

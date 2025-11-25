@@ -16,32 +16,36 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
   const executeRunners = pub
     .execute
     .handler(async ({ input, errors }: { input: any; errors: any }) => {
+      console.log("[runner/orpc] Received input:", JSON.stringify(input, null, 2));
+      console.log("[runner/orpc] Input type:", typeof input);
+      console.log("[runner/orpc] Input keys:", input ? Object.keys(input) : "null/undefined");
+      
       // Resolve runner functions by name
       const resolvedRunners: Runner[] = [];
       const missingRunners: string[] = [];
 
       // Handle both legacy format (array of strings) and new format (array of configs)
-      const runnerConfigs: Array<{ pattern: string; input?: Record<string, unknown> }> = [];
+      const runnerConfigs: Array<{ name: string; input?: Record<string, unknown> }> = [];
       
       for (const runnerItem of input.runners) {
         if (typeof runnerItem === "string") {
           // Legacy format: string
-          runnerConfigs.push({ pattern: runnerItem });
+          runnerConfigs.push({ name: runnerItem });
         } else {
           // New format: config object
           runnerConfigs.push({
-            pattern: runnerItem.pattern,
+            name: runnerItem.name,
             input: runnerItem.input,
           });
         }
       }
 
       for (const config of runnerConfigs) {
-        const runner = runners[config.pattern];
+        const runner = runners[config.name];
         if (runner) {
           resolvedRunners.push(runner);
         } else {
-          missingRunners.push(config.pattern);
+          missingRunners.push(config.name);
         }
       }
 
@@ -117,7 +121,7 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
         region,
         usageExample: {
           method: "POST",
-          endpoint: "/api/runner",
+          endpoint: "/api/runner/execute",
           exampleUrl: "https://example.com",
         },
       });

@@ -30,15 +30,16 @@ pnpm dev
 curl -X POST http://localhost:3000/api/run \
   -H "Content-Type: application/json" \
   -d '{
-    "sites": ["https://example.com"],
     "runners": [
       {
-        "pattern": "cookieBannerVisibleTest",
+        "name": "cookieBannerVisibleTest",
         "region": "us-east-1",
-        "input": {}
+        "input": {
+          "url": "https://example.com"
+        }
       }
     ],
-    "mode": "geo-playwright"
+    "mode": "remote"
   }'
 ```
 

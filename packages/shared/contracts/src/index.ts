@@ -8,5 +8,16 @@ export {
   RunnerConfigRequestSchema,
 } from "./runner";
 
+export {
+  submitRun,
+  getRunStatus,
+  getRunResults,
+  orchestratorContract,
+  RunRequestSchema,
+  RunStatusSchema,
+  RunSummarySchema,
+  RunnerConfigSchema,
+} from "./orchestrator";
+
 export type { RunnerResult } from "@runners/core";
 

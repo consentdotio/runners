@@ -1,68 +1,109 @@
-import type { Job, JobResult, RunRequest, RunSummary } from "./types";
-import { nanoid } from "nanoid";
+import type { Job, JobResult, RunRequest, RunSummary, RunnerConfig } from "./types";
 
 /**
- * Generate a unique run ID
+ * Generate a unique run ID (workflow-safe, no Node.js dependencies)
  */
 export function generateRunId(): string {
-  return `run_${nanoid()}`;
+  // Use timestamp + random for uniqueness (workflow-safe)
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `run_${timestamp}_${random}`;
 }
 
 /**
- * Generate a unique job ID
+ * Generate a unique job ID (workflow-safe, no Node.js dependencies)
  */
 export function generateJobId(): string {
-  return `job_${nanoid()}`;
+  // Use timestamp + random for uniqueness (workflow-safe)
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `job_${timestamp}_${random}`;
+}
+
+/**
+ * Extract URL from runner input
+ */
+function getUrlFromRunnerInput(runner: RunnerConfig): string | undefined {
+  return runner.input?.url as string | undefined;
 }
 
 /**
  * Fan out jobs from run request
- * Creates one job per {site, region} pair based on runner configurations
+ * Groups runners by URL and region to create jobs
  */
 export function fanoutJobs(request: RunRequest, runId: string): Job[] {
   const jobs: Job[] = [];
 
-  if (request.mode === "sandbox") {
-    // Sandbox mode: one job per site (all runners run locally)
-    for (const site of request.sites) {
+  if (request.mode === "local") {
+    // Local mode: group runners by URL
+    const runnersByUrl = new Map<string, typeof request.runners>();
+    
+    for (const runner of request.runners) {
+      const url = getUrlFromRunnerInput(runner);
+      if (!url) {
+        throw new Error(
+          `Runner "${runner.name}" must specify a URL in its input when mode is 'local'`
+        );
+      }
+      
+      const urlRunners = runnersByUrl.get(url) || [];
+      urlRunners.push(runner);
+      runnersByUrl.set(url, urlRunners);
+    }
+
+    // Create one job per URL
+    for (const [url, runners] of runnersByUrl) {
       jobs.push({
         jobId: generateJobId(),
-        site,
-        runners: request.runners,
+        runners,
         runId,
+        timeout: request.timeout,
       });
     }
   } else {
-    // Geo-playwright mode: group runners by region and create jobs per site-region
-    const runnersByRegion = new Map<string, typeof request.runners>();
+    // Remote mode: group runners by URL and region
+    const runnersByUrlAndRegion = new Map<string, Map<string, typeof request.runners>>();
     
     for (const runner of request.runners) {
       if (!runner.region) {
         throw new Error(
-          `Runner "${runner.pattern}" must specify a region when mode is 'geo-playwright'`
+          `Runner "${runner.name}" must specify a region when mode is 'remote'`
         );
       }
       
-      const regionRunners = runnersByRegion.get(runner.region) || [];
+      const url = getUrlFromRunnerInput(runner);
+      if (!url) {
+        throw new Error(
+          `Runner "${runner.name}" must specify a URL in its input when mode is 'remote'`
+        );
+      }
+      
+      let regionMap = runnersByUrlAndRegion.get(url);
+      if (!regionMap) {
+        regionMap = new Map();
+        runnersByUrlAndRegion.set(url, regionMap);
+      }
+      
+      const regionRunners = regionMap.get(runner.region) || [];
       regionRunners.push(runner);
-      runnersByRegion.set(runner.region, regionRunners);
+      regionMap.set(runner.region, regionRunners);
     }
 
-    if (runnersByRegion.size === 0) {
+    if (runnersByUrlAndRegion.size === 0) {
       throw new Error(
-        "At least one runner with a region is required when mode is 'geo-playwright'"
+        "At least one runner with a URL and region is required when mode is 'remote'"
       );
     }
 
-    // Create one job per site-region combination
-    for (const site of request.sites) {
-      for (const [region, runners] of runnersByRegion) {
+    // Create one job per URL-region combination
+    for (const [url, regionMap] of runnersByUrlAndRegion) {
+      for (const [region, runners] of regionMap) {
         jobs.push({
           jobId: generateJobId(),
-          site,
           region,
           runners,
           runId,
+          timeout: request.timeout,
         });
       }
     }
@@ -116,11 +157,10 @@ export function normalizeJobResult(
 ): JobResult {
   return {
     jobId: job.jobId,
-    site: job.site,
     region: job.region,
     state,
     results: results.map((r, index) => ({
-      name: r.name || job.runners[index]?.pattern || `runner_${index}`,
+      name: r.name || job.runners[index]?.name || `runner_${index}`,
       status: r.status as "pass" | "fail" | "error",
       details: r.details as Record<string, unknown> | undefined,
       errorMessage: r.errorMessage,

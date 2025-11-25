@@ -1,17 +1,13 @@
 {
   "name": "@runners/orchestrator",
   "version": "0.0.0",
-  "description": "Workflow orchestrator for running tests across multiple sites and regions",
+  "description": "Orchestrator for running tests across multiple regions",
   "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.mjs"
-    },
-    "./workflows": {
-      "types": "./dist/workflows/index.d.ts",
-      "default": "./dist/workflows/index.mjs"
     },
     "./routers": {
       "types": "./dist/routers/index.d.ts",
@@ -38,8 +34,6 @@
     "@orpc/zod": "1.11.3",
     "@runners/contracts": "workspace:*",
     "@runners/core": "workspace:*",
-    "nanoid": "^5.1.6",
-    "workflow": "4.0.1-beta.18",
     "zod": "catalog:"
   },
   "devDependencies": {

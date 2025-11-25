@@ -23,11 +23,11 @@ export {
 // Export workflows
 export { runWorkflow } from "./workflows/index";
 
-// Export routers
-export { router } from "./routers/index";
-
 // Export API handler
 export { createOrchestratorHandler } from "./api/handler";
+
+// Export router creation function
+export { createOrchestratorRouter } from "./orpc";
 
 // Export utilities
 export {

@@ -4,8 +4,6 @@ export default defineConfig({
   source: {
     entry: {
       index: "./src/index.ts",
-      workflows: "./src/workflows/index.ts",
-      routers: "./src/routers/index.ts",
     },
   },
   lib: [
@@ -21,6 +19,7 @@ export default defineConfig({
     filename: {
       js: "[name].mjs",
     },
+    externals: [],
   },
 });
 

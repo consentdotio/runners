@@ -6,7 +6,7 @@ const app = new Hono();
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    message: "Runners API is available at /api/runner",
+    message: "Runners API is available at /api/runner/execute",
     region: process.env.RUNNER_REGION || "us-east-1",
   });
 });

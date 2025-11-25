@@ -3,51 +3,71 @@ import { RPCLink } from "@orpc/client/fetch";
 import type { ContractRouterClient } from "@orpc/contract";
 import { runnerContract } from "@runners/contracts";
 import type { Job, JobResult } from "../types";
-import { getRunnerUrl, normalizeJobResult } from "../utils";
+import { getRunnerUrl as getRunnerEndpointUrl, normalizeJobResult } from "../utils";
 
 /**
  * Execute a remote job step (calls runner via oRPC)
- * Uses 'use step' directive for Workflow
  * 
  * @param job - Job definition (must have region)
  * @returns Job result
  */
 export async function runRemoteStep(job: Job & { region: string }): Promise<JobResult> {
-  "use step";
 
   const startedAt = new Date();
 
   if (!job.region) {
-    throw new Error("Region is required for geo-playwright mode");
+    throw new Error("Region is required for remote mode");
   }
 
   try {
     // Get runner URL for this region
-    const runnerUrl = getRunnerUrl(job.region);
+    const runnerEndpointUrl = getRunnerEndpointUrl(job.region);
 
     // Create oRPC client using the contract
     const link = new RPCLink({
-      url: runnerUrl,
+      url: runnerEndpointUrl,
     });
 
     const client: ContractRouterClient<typeof runnerContract> = createORPCClient(link);
 
-    // Prepare runner configs with pattern and input
+    // Extract URL from first runner's input (all runners in a job should have the same URL)
+    const firstRunner = job.runners[0];
+    if (!firstRunner) {
+      throw new Error("Job must have at least one runner");
+    }
+    const url = firstRunner.input?.url as string | undefined;
+    if (!url) {
+      throw new Error("Runner input must contain a 'url' field");
+    }
+
+    // Validate all runners have the same URL
+    for (const runner of job.runners) {
+      const runnerInputUrl = runner.input?.url as string | undefined;
+      if (runnerInputUrl !== url) {
+        throw new Error(
+          `All runners in a job must have the same URL. Found "${url}" and "${runnerInputUrl}"`
+        );
+      }
+    }
+
+    // Prepare runner configs with name and input
     const runnerConfigs = job.runners.map((r) => ({
-      pattern: r.pattern,
-      input: {
-        url: job.site,
-        ...r.input,
-      },
+      name: r.name,
+      input: r.input || {},
     }));
 
-    // Call the runner using the contract with per-runner configs
-    const result = await client.execute({
-      url: job.site,
+    // Prepare request payload
+    const requestPayload = {
+      url,
       runners: runnerConfigs,
       runId: job.runId,
       region: job.region,
-    });
+    };
+
+    console.log("[orchestrator/remote-step] Calling runner with payload:", JSON.stringify(requestPayload, null, 2));
+
+    // Call the runner using the contract with per-runner configs
+    const result = await client.execute(requestPayload);
 
     const completedAt = new Date();
 
