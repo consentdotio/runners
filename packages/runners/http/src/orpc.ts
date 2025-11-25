@@ -2,12 +2,13 @@ import { implement } from "@orpc/server";
 import { runRunners, getRunnerInfo, type Runner, type RunnerContext, type RunnerResult } from "@runners/core";
 import { runnerContract } from "@runners/contracts";
 import type { CreateHttpRunnerOptions } from "./types";
+import type { RunnerSchemaInfo } from "./schema-discovery";
 
 /**
  * Create oRPC router implementing the runner contract
  */
 export function createRunnerRouter(options: CreateHttpRunnerOptions) {
-  const { runners, region } = options;
+  const { runners, region, schemas } = options;
 
   // Use implement() on the full contract - it creates an implementer that we can use
   // to attach handlers. After attaching handlers, we use .router() to create the router.
@@ -56,6 +57,49 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
             availableRunners: Object.keys(runners),
           },
         });
+      }
+
+      // Validate runner inputs against schemas if available
+      if (schemas) {
+        for (let i = 0; i < runnerConfigs.length; i++) {
+          const config = runnerConfigs[i];
+          const schemaInfo = schemas.get(config.name);
+          
+          if (schemaInfo?.schema && config.input) {
+            try {
+              // Validate input against schema
+              schemaInfo.schema.parse(config.input);
+            } catch (validationError) {
+              // Extract validation issues from Zod error
+              if (validationError && typeof validationError === "object" && "issues" in validationError) {
+                const zodError = validationError as { issues: Array<{ path: Array<string | number>; message: string; code: string }> };
+                throw errors.INPUT_VALIDATION_FAILED({
+                  data: {
+                    runnerName: config.name,
+                    issues: zodError.issues.map((issue) => ({
+                      path: issue.path,
+                      message: issue.message,
+                      code: issue.code,
+                    })),
+                  },
+                });
+              }
+              // Fallback if error structure is unexpected
+              throw errors.INPUT_VALIDATION_FAILED({
+                data: {
+                  runnerName: config.name,
+                  issues: [
+                    {
+                      path: [],
+                      message: validationError instanceof Error ? validationError.message : String(validationError),
+                      code: "invalid_type",
+                    },
+                  ],
+                },
+              });
+            }
+          }
+        }
       }
 
       try {

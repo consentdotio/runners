@@ -1,5 +1,7 @@
 import type { Nitro, NitroModule } from "nitro/types";
 import { join } from "pathe";
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { LocalBuilder } from "./builders";
 import type { ModuleOptions } from "./types";
 
@@ -32,8 +34,14 @@ export default {
       nitro.options.externals.external.push((id) => id.startsWith(outDir));
     }
 
+    // Extract schemas at build time
+    const schemaMetadataPath = join(nitro.options.buildDir, "runner-schemas.json");
+    
     // Build runners bundle on build:before hook
     nitro.hooks.hook("build:before", async () => {
+      // Extract schema metadata using Rust tool
+      await extractSchemaMetadata(patterns, schemaMetadataPath, nitro.options.rootDir);
+      
       if (nitro.options.dev) {
         // Start watch mode for incremental rebuilds
         await builder.watch();
@@ -52,7 +60,7 @@ export default {
     }
 
     // Create virtual handler that imports the bundled runners
-    addVirtualHandler(nitro, "/api/runner", "runners/handler", region);
+    addVirtualHandler(nitro, "/api/runner", "runners/handler", region, schemaMetadataPath);
 
     // Add handlers for /api/runner and its sub-paths (docs, spec.json)
     nitro.options.handlers.push(
@@ -68,14 +76,61 @@ export default {
   },
 } satisfies NitroModule;
 
+async function extractSchemaMetadata(
+  patterns: string[],
+  outputPath: string,
+  cwd: string
+): Promise<void> {
+  try {
+    // Try to find schema-extractor binary
+    // First check if it's in node_modules
+    const possiblePaths = [
+      join(process.cwd(), "node_modules/@runners/schema-extractor/target/release/schema-extractor"),
+      join(__dirname, "../../schema-extractor/target/release/schema-extractor"),
+      join(process.cwd(), "packages/runners/schema-extractor/target/release/schema-extractor"),
+    ];
+
+    let extractorPath: string | undefined;
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        extractorPath = path;
+        break;
+      }
+    }
+
+    if (!extractorPath) {
+      console.warn(
+        "[runners/nitro] Schema extractor not found. Schema discovery will use runtime scanning."
+      );
+      return;
+    }
+
+    const patternsStr = patterns.join(",");
+    execSync(
+      `${extractorPath} --patterns "${patternsStr}" --output "${outputPath}" --cwd "${cwd}"`,
+      { stdio: "inherit" }
+    );
+  } catch (error) {
+    console.warn(
+      "[runners/nitro] Failed to extract schema metadata:",
+      error instanceof Error ? error.message : String(error)
+    );
+    console.warn("[runners/nitro] Falling back to runtime schema discovery");
+  }
+}
+
 function addVirtualHandler(
   nitro: Nitro,
   _route: string,
   virtualKey: string,
-  region?: string
+  region?: string,
+  schemaMetadataPath?: string
 ) {
   // The actual runners bundle is at runners/runners.mjs
   const runnersBundlePath = join(nitro.options.buildDir, "runners/runners.mjs");
+  const schemaMetadataImport = schemaMetadataPath
+    ? `process.env.RUNNER_SCHEMAS_METADATA = ${JSON.stringify(schemaMetadataPath)};`
+    : "";
 
   if (!nitro.routing) {
     // Nitro v2 (legacy)
@@ -83,8 +138,9 @@ function addVirtualHandler(
     import { fromWebHandler } from "h3";
     import { createOrpcRunnerHandler } from 'runners/http';
     import { runners } from "${runnersBundlePath}";
+    ${schemaMetadataImport}
     
-    const handler = createOrpcRunnerHandler({
+    const handler = await createOrpcRunnerHandler({
       runners,
       region: ${region ? JSON.stringify(region) : "undefined"},
     });
@@ -96,8 +152,9 @@ function addVirtualHandler(
     nitro.options.virtual[`#${virtualKey}`] = /* js */ `
     import { createOrpcRunnerHandler } from 'runners/http';
     import { runners } from "${runnersBundlePath}";
+    ${schemaMetadataImport}
     
-    const handler = createOrpcRunnerHandler({
+    const handler = await createOrpcRunnerHandler({
       runners,
       region: ${region ? JSON.stringify(region) : "undefined"},
     });

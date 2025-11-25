@@ -5,6 +5,8 @@ import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { createRunnerRouter } from "./orpc";
 import type { CreateHttpRunnerOptions } from "./types";
 import { enhanceRunnerOpenAPISpec } from "./openapi-enhancer";
+import { discoverRunnerSchemas } from "./schema-discovery";
+import { loadBuildTimeSchemas } from "./schema-loader";
 import {
   runnerContract,
   RunRunnersRequestSchema,
@@ -17,10 +19,40 @@ import {
  * Create oRPC handler for runner API with Scalar/Swagger UI
  * Uses the shared runner contract for type-safe communication
  */
-export function createOrpcRunnerHandler(
+export async function createOrpcRunnerHandler(
   options: CreateHttpRunnerOptions
-): (req: Request) => Promise<Response> {
-  const router = createRunnerRouter(options);
+): Promise<(req: Request) => Promise<Response>> {
+  // Load schemas: prefer pre-extracted build-time metadata, fallback to runtime discovery
+  let schemas = options.schemas;
+  
+  if (!schemas) {
+    // Try to load build-time extracted schemas first
+    const buildTimeMetadataPath = process.env.RUNNER_SCHEMAS_METADATA || "runner-schemas.json";
+    try {
+      schemas = await loadBuildTimeSchemas(buildTimeMetadataPath);
+      if (schemas.size > 0) {
+        console.log(`[runners/http] Loaded ${schemas.size} schemas from build-time metadata`);
+      }
+    } catch {
+      // Fallback to runtime discovery
+      if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
+        console.log("[runners/http] Build-time schema metadata not found, using runtime discovery");
+      }
+    }
+  }
+  
+  // Fallback to runtime discovery if build-time schemas not available
+  if (!schemas || schemas.size === 0) {
+    if (options.schemaPattern) {
+      schemas = await discoverRunnerSchemas(options.schemaPattern);
+    } else {
+      // Default patterns
+      schemas = await discoverRunnerSchemas(["src/**/*.ts", "runners/**/*.ts"]);
+    }
+  }
+
+  // Create router with schemas for validation
+  const router = createRunnerRouter({ ...options, schemas });
   const handler = new OpenAPIHandler(router, {
     interceptors: [
       onError((error: unknown) => {
@@ -103,8 +135,8 @@ export function createOrpcRunnerHandler(
         },
       });
 
-      // Enhance spec with runner-specific information
-      spec = await enhanceRunnerOpenAPISpec(spec, options);
+      // Enhance spec with runner-specific information including schemas
+      spec = await enhanceRunnerOpenAPISpec(spec, { ...options, schemas });
 
       return Response.json(spec);
     }

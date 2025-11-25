@@ -1,0 +1,19 @@
+{
+  "name": "@runners/schema-extractor",
+  "version": "0.1.0",
+  "description": "Build-time tool for extracting runner schema metadata",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "schema-extractor": "./target/release/schema-extractor"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "clean": "cargo clean"
+  },
+  "files": [
+    "target/release/schema-extractor",
+    "build.js"
+  ]
+}
+

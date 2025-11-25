@@ -1,3 +1,5 @@
+import type { RunnerSchemaInfo } from "./schema-discovery";
+
 // Re-export types from runners core
 export type {
   Runner,
@@ -21,6 +23,16 @@ export type HttpRunnerRequest = {
 export type CreateHttpRunnerOptions = {
   runners: Record<string, import("@runners/core").Runner>;
   region?: string;
+  /**
+   * Glob pattern(s) to discover runner schemas from source files.
+   * Defaults to ["src/**\/*.ts", "runners/**\/*.ts"] if not provided.
+   */
+  schemaPattern?: string | string[];
+  /**
+   * Pre-discovered schemas map. If provided, schema discovery will be skipped.
+   * Useful when schemas are already discovered elsewhere.
+   */
+  schemas?: Map<string, RunnerSchemaInfo>;
   /**
    * If true, only runners with "use runner" directive will be discovered.
    * Note: This option is currently unused as runners are passed directly.

@@ -3,7 +3,7 @@ import type { Runner } from "runners";
 import { withPlaywright } from "runners/playwright";
 
 // Define schemas
-const CookieBannerInputSchema = z.object({
+export const CookieBannerInputSchema = z.object({
   selectors: z
     .array(z.string())
     .optional()
@@ -12,7 +12,7 @@ const CookieBannerInputSchema = z.object({
   url: z.string(),
 });
 
-const CookieBannerOutputSchema = z.object({
+export const CookieBannerOutputSchema = z.object({
   visible: z.boolean(),
   selector: z.string().optional(),
   elementCount: z.number().optional(),

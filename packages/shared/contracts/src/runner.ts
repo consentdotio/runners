@@ -108,6 +108,19 @@ export const executeRunners = oc
         availableRunners: z.array(z.string()),
       }),
     },
+    INPUT_VALIDATION_FAILED: {
+      message: "Runner input validation failed",
+      data: z.object({
+        runnerName: z.string(),
+        issues: z.array(
+          z.object({
+            path: z.array(z.union([z.string(), z.number()])),
+            message: z.string(),
+            code: z.string(),
+          })
+        ),
+      }),
+    },
     EXECUTION_FAILED: {
       message: "Runner execution failed",
       data: z.object({

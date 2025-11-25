@@ -2,6 +2,7 @@ import type { OpenAPI } from "@orpc/openapi";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import type { Runner } from "@runners/core";
 import type { CreateHttpRunnerOptions } from "./types";
+import type { RunnerSchemaInfo } from "./schema-discovery";
 
 /**
  * Extracts runner metadata from the runners map
@@ -21,9 +22,9 @@ function getRunnerMetadata(
  */
 export async function enhanceRunnerOpenAPISpec(
   spec: OpenAPI.Document,
-  options: CreateHttpRunnerOptions
+  options: CreateHttpRunnerOptions & { schemas?: Map<string, RunnerSchemaInfo> }
 ): Promise<OpenAPI.Document> {
-  const { runners, region } = options;
+  const { runners, region, schemas } = options;
   const converter = new ZodToJsonSchemaConverter();
   const runnerMetadata = getRunnerMetadata(runners);
 
@@ -33,6 +34,29 @@ export async function enhanceRunnerOpenAPISpec(
   }
   if (!spec.components.schemas) {
     spec.components.schemas = {};
+  }
+
+  // Add runner input schemas to components if available
+  if (schemas) {
+    for (const [runnerName, schemaInfo] of schemas.entries()) {
+      if (schemaInfo.schema) {
+        try {
+          const jsonSchema = converter.convert(schemaInfo.schema);
+          const schemaName = `${runnerName}Input`;
+          spec.components.schemas![schemaName] = {
+            ...jsonSchema,
+            description: schemaInfo.description || `Input schema for ${runnerName} runner`,
+          };
+        } catch (error) {
+          if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
+            console.warn(
+              `[runners/http] Failed to convert schema for ${runnerName}:`,
+              error
+            );
+          }
+        }
+      }
+    }
   }
 
   // Add available runners list to components

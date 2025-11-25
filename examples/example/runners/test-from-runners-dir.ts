@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Runner } from "runners";
 import { withPlaywright } from "runners/playwright";
 
-const TestInputSchema = z.object({
+export const TestInputSchema = z.object({
   url: z.string(),
 });
 
