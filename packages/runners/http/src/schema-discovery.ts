@@ -16,7 +16,7 @@ export type RunnerSchemaInfo = {
 /**
  * Discovers runner input schemas from runner files.
  * Looks for exported schemas following the convention: `{runnerName}InputSchema` or `{runnerName}Schema`
- * 
+ *
  * @param patterns - Glob pattern(s) to match runner files
  * @returns Map of runner name to schema info
  */
@@ -45,19 +45,26 @@ export async function discoverRunnerSchemas(
       // Look for runner exports and their corresponding schemas
       for (const [exportName, exportValue] of Object.entries(module)) {
         // Check if it's a runner function
-        if (typeof exportValue === "function" && exportValue.constructor.name === "AsyncFunction") {
+        if (
+          typeof exportValue === "function" &&
+          exportValue.constructor.name === "AsyncFunction"
+        ) {
           // Try to find corresponding schema exports
           // Convention: {runnerName}InputSchema, {runnerName}Schema, or InputSchema
-          const schemaName = exportName.endsWith("Schema") 
-            ? exportName 
+          const schemaName = exportName.endsWith("Schema")
+            ? exportName
             : `${exportName}InputSchema`;
-          
-          const schemaExport = module[schemaName] || module[`${exportName}Schema`] || module.InputSchema;
-          
+
+          const schemaExport =
+            module[schemaName] ||
+            module[`${exportName}Schema`] ||
+            module.InputSchema;
+
           if (schemaExport && typeof schemaExport === "object") {
             // Check if it's a Zod schema (v3 or v4)
-            const isZodSchema = "_def" in schemaExport || "_zod" in schemaExport;
-            
+            const isZodSchema =
+              "_def" in schemaExport || "_zod" in schemaExport;
+
             if (isZodSchema) {
               schemas.set(exportName, {
                 name: exportName,
@@ -75,7 +82,10 @@ export async function discoverRunnerSchemas(
     } catch (error) {
       // Log but continue
       if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
-        console.warn(`[runners/http] Failed to discover schemas from ${file}:`, error);
+        console.warn(
+          `[runners/http] Failed to discover schemas from ${file}:`,
+          error
+        );
       }
     }
   }
@@ -103,4 +113,3 @@ export async function getAllRunnerSchemaInfo(
   const schemas = await discoverRunnerSchemas(patterns);
   return Array.from(schemas.values());
 }
-

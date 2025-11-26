@@ -6,11 +6,10 @@ export type { OrchestratorModuleOptions } from "./types";
 export default {
   name: "runners/nitro-orchestrator",
   setup(nitro: Nitro) {
-
     const options =
       (nitro.options as unknown as { orchestrator?: OrchestratorModuleOptions })
         .orchestrator || {};
-    
+
     // Default patterns: scan both src/** and runners/**
     let patterns: string[];
     if (options.pattern) {
@@ -95,4 +94,3 @@ function addOrchestratorHandler(nitro: Nitro, _patterns: string[]) {
   `;
   }
 }
-

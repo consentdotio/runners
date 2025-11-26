@@ -38,7 +38,8 @@ export async function loadBuildTimeSchemas(
           if (schemaInfo) {
             const schemaExport = module[schemaInfo.name];
             if (schemaExport && typeof schemaExport === "object") {
-              const isZodSchema = "_def" in schemaExport || "_zod" in schemaExport;
+              const isZodSchema =
+                "_def" in schemaExport || "_zod" in schemaExport;
               if (isZodSchema) {
                 schemas.set(runner.name, {
                   name: runner.name,
@@ -74,4 +75,3 @@ export async function loadBuildTimeSchemas(
     return new Map();
   }
 }
-

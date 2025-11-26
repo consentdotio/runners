@@ -10,12 +10,11 @@ import { normalizeJobResult } from "../utils";
 
 /**
  * Execute a local job step
- * 
+ *
  * @param job - Job definition
  * @returns Job result
  */
 export async function runLocalStep(job: Job): Promise<JobResult> {
-
   const startedAt = new Date();
 
   try {
@@ -60,8 +59,7 @@ export async function runLocalStep(job: Job): Promise<JobResult> {
     );
   } catch (error) {
     const completedAt = new Date();
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return normalizeJobResult(
       job,
@@ -73,4 +71,3 @@ export async function runLocalStep(job: Job): Promise<JobResult> {
     );
   }
 }
-

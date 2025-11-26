@@ -20,16 +20,19 @@ app.all("*", async (c) => {
   const request = new Request(c.req.url, {
     method: c.req.method,
     headers: c.req.header(),
-    body: c.req.method !== "GET" && c.req.method !== "HEAD" ? await c.req.text() : undefined,
+    body:
+      c.req.method !== "GET" && c.req.method !== "HEAD"
+        ? await c.req.text()
+        : undefined,
   });
 
   const response = await orchestratorHandler(request);
-  
+
   // If handler returns a response, use it; otherwise return 404
   if (response) {
     return response;
   }
-  
+
   return c.text("Not found", 404);
 });
 

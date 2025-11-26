@@ -1,4 +1,10 @@
-import type { Job, JobResult, RunRequest, RunSummary, RunnerConfig } from "./types";
+import type {
+  Job,
+  JobResult,
+  RunRequest,
+  RunSummary,
+  RunnerConfig,
+} from "./types";
 
 /**
  * Generate a unique run ID (workflow-safe, no Node.js dependencies)
@@ -37,7 +43,7 @@ export function fanoutJobs(request: RunRequest, runId: string): Job[] {
   if (request.mode === "local") {
     // Local mode: group runners by URL
     const runnersByUrl = new Map<string, typeof request.runners>();
-    
+
     for (const runner of request.runners) {
       const url = getUrlFromRunnerInput(runner);
       if (!url) {
@@ -45,7 +51,7 @@ export function fanoutJobs(request: RunRequest, runId: string): Job[] {
           `Runner "${runner.name}" must specify a URL in its input when mode is 'local'`
         );
       }
-      
+
       const urlRunners = runnersByUrl.get(url) || [];
       urlRunners.push(runner);
       runnersByUrl.set(url, urlRunners);
@@ -62,28 +68,31 @@ export function fanoutJobs(request: RunRequest, runId: string): Job[] {
     }
   } else {
     // Remote mode: group runners by URL and region
-    const runnersByUrlAndRegion = new Map<string, Map<string, typeof request.runners>>();
-    
+    const runnersByUrlAndRegion = new Map<
+      string,
+      Map<string, typeof request.runners>
+    >();
+
     for (const runner of request.runners) {
       if (!runner.region) {
         throw new Error(
           `Runner "${runner.name}" must specify a region when mode is 'remote'`
         );
       }
-      
+
       const url = getUrlFromRunnerInput(runner);
       if (!url) {
         throw new Error(
           `Runner "${runner.name}" must specify a URL in its input when mode is 'remote'`
         );
       }
-      
+
       let regionMap = runnersByUrlAndRegion.get(url);
       if (!regionMap) {
         regionMap = new Map();
         runnersByUrlAndRegion.set(url, regionMap);
       }
-      
+
       const regionRunners = regionMap.get(runner.region) || [];
       regionRunners.push(runner);
       regionMap.set(runner.region, regionRunners);
@@ -149,7 +158,13 @@ export function getRunnerUrl(region: string): string {
  */
 export function normalizeJobResult(
   job: Job,
-  results: Array<{ name: string; status: string; details?: unknown; errorMessage?: string; durationMs?: number }>,
+  results: Array<{
+    name: string;
+    status: string;
+    details?: unknown;
+    errorMessage?: string;
+    durationMs?: number;
+  }>,
   state: JobResult["state"] = "completed",
   error?: string,
   startedAt?: Date,
@@ -239,8 +254,8 @@ export function aggregateResults(
     },
     createdAt,
     completedAt,
-    durationMs:
-      completedAt ? completedAt.getTime() - createdAt.getTime() : undefined,
+    durationMs: completedAt
+      ? completedAt.getTime() - createdAt.getTime()
+      : undefined,
   };
 }
-

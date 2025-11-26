@@ -8,7 +8,7 @@ export type OrchestratorModuleOptions = {
   /**
    * Map of region names to remote runner endpoint URLs.
    * Used for remote mode execution.
-   * 
+   *
    * @example
    * {
    *   "us-east-1": "https://us-east.runner.example.com/api/runner",
@@ -31,4 +31,3 @@ declare module "nitropack" {
     orchestrator?: OrchestratorModuleOptions;
   };
 }
-

@@ -8,7 +8,12 @@ export type RunMode = "local" | "remote";
 /**
  * Job state tracking
  */
-export type JobState = "queued" | "running" | "completed" | "failed" | "timed_out";
+export type JobState =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "timed_out";
 
 /**
  * Runner configuration with name, region, and input schema
@@ -97,4 +102,3 @@ export type RunRecord = {
   createdAt: Date;
   updatedAt: Date;
 };
-

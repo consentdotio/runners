@@ -23,5 +23,9 @@ export const testFromRunnersDir: Runner<typeof TestInputSchema> = async (
 
   log(title);
   log("Test from runners/ directory");
-  return { name: "test_from_runners_dir", status: ok ? "pass" : "fail", details: { title } };
+  return {
+    name: "test_from_runners_dir",
+    status: ok ? "pass" : "fail",
+    details: { title },
+  };
 };

@@ -35,13 +35,20 @@ export default {
     }
 
     // Extract schemas at build time
-    const schemaMetadataPath = join(nitro.options.buildDir, "runner-schemas.json");
-    
+    const schemaMetadataPath = join(
+      nitro.options.buildDir,
+      "runner-schemas.json"
+    );
+
     // Build runners bundle on build:before hook
     nitro.hooks.hook("build:before", async () => {
       // Extract schema metadata using Rust tool
-      await extractSchemaMetadata(patterns, schemaMetadataPath, nitro.options.rootDir);
-      
+      await extractSchemaMetadata(
+        patterns,
+        schemaMetadataPath,
+        nitro.options.rootDir
+      );
+
       if (nitro.options.dev) {
         // Start watch mode for incremental rebuilds
         await builder.watch();
@@ -60,7 +67,13 @@ export default {
     }
 
     // Create virtual handler that imports the bundled runners
-    addVirtualHandler(nitro, "/api/runner", "runners/handler", region, schemaMetadataPath);
+    addVirtualHandler(
+      nitro,
+      "/api/runner",
+      "runners/handler",
+      region,
+      schemaMetadataPath
+    );
 
     // Add handlers for /api/runner and its sub-paths (docs, spec.json)
     nitro.options.handlers.push(
@@ -85,9 +98,15 @@ async function extractSchemaMetadata(
     // Try to find schema-extractor binary
     // First check if it's in node_modules
     const possiblePaths = [
-      join(process.cwd(), "node_modules/@runners/schema-extractor/target/release/schema-extractor"),
+      join(
+        process.cwd(),
+        "node_modules/@runners/schema-extractor/target/release/schema-extractor"
+      ),
       join(__dirname, "../../schema-extractor/target/release/schema-extractor"),
-      join(process.cwd(), "packages/runners/schema-extractor/target/release/schema-extractor"),
+      join(
+        process.cwd(),
+        "packages/runners/schema-extractor/target/release/schema-extractor"
+      ),
     ];
 
     let extractorPath: string | undefined;

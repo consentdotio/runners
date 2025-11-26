@@ -2,7 +2,7 @@ import { discoverRunners, type Runner } from "@runners/core";
 
 /**
  * Discover all available runners with 'use runner' directives
- * 
+ *
  * @param pattern - Glob pattern to match runner files (default: "src/**\/*.ts" or "runners/**\/*.ts")
  * @returns Map of runner name to runner function
  */
@@ -10,9 +10,7 @@ export async function discoverAvailableRunners(
   pattern?: string
 ): Promise<Map<string, Runner>> {
   // Try common patterns if not specified
-  const patterns = pattern
-    ? [pattern]
-    : ["src/**/*.ts", "runners/**/*.ts"];
+  const patterns = pattern ? [pattern] : ["src/**/*.ts", "runners/**/*.ts"];
 
   const allRunners = new Map<string, Runner>();
 
@@ -25,7 +23,10 @@ export async function discoverAvailableRunners(
     } catch (error) {
       // Log but continue - some patterns might not match
       if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
-        console.warn(`[orchestrator] Failed to discover runners from pattern "${p}":`, error);
+        console.warn(
+          `[orchestrator] Failed to discover runners from pattern "${p}":`,
+          error
+        );
       }
     }
   }
@@ -35,7 +36,7 @@ export async function discoverAvailableRunners(
 
 /**
  * Get runners by name from discovered runners
- * 
+ *
  * @param runnerNames - Array of runner names to retrieve
  * @param discoveredRunners - Map of all discovered runners
  * @returns Array of runner functions
@@ -64,4 +65,3 @@ export function getRunnersByName(
 
   return runners;
 }
-

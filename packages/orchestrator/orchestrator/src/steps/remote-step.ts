@@ -3,16 +3,20 @@ import { RPCLink } from "@orpc/client/fetch";
 import type { ContractRouterClient } from "@orpc/contract";
 import { runnerContract } from "@runners/contracts";
 import type { Job, JobResult } from "../types";
-import { getRunnerUrl as getRunnerEndpointUrl, normalizeJobResult } from "../utils";
+import {
+  getRunnerUrl as getRunnerEndpointUrl,
+  normalizeJobResult,
+} from "../utils";
 
 /**
  * Execute a remote job step (calls runner via oRPC)
- * 
+ *
  * @param job - Job definition (must have region)
  * @returns Job result
  */
-export async function runRemoteStep(job: Job & { region: string }): Promise<JobResult> {
-
+export async function runRemoteStep(
+  job: Job & { region: string }
+): Promise<JobResult> {
   const startedAt = new Date();
 
   if (!job.region) {
@@ -28,7 +32,8 @@ export async function runRemoteStep(job: Job & { region: string }): Promise<JobR
       url: runnerEndpointUrl,
     });
 
-    const client: ContractRouterClient<typeof runnerContract> = createORPCClient(link);
+    const client: ContractRouterClient<typeof runnerContract> =
+      createORPCClient(link);
 
     // Extract URL from first runner's input (all runners in a job should have the same URL)
     const firstRunner = job.runners[0];
@@ -64,7 +69,10 @@ export async function runRemoteStep(job: Job & { region: string }): Promise<JobR
       region: job.region,
     };
 
-    console.log("[orchestrator/remote-step] Calling runner with payload:", JSON.stringify(requestPayload, null, 2));
+    console.log(
+      "[orchestrator/remote-step] Calling runner with payload:",
+      JSON.stringify(requestPayload, null, 2)
+    );
 
     // Call the runner using the contract with per-runner configs
     const result = await client.execute(requestPayload);
@@ -82,8 +90,7 @@ export async function runRemoteStep(job: Job & { region: string }): Promise<JobR
     );
   } catch (error) {
     const completedAt = new Date();
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Determine if it's a timeout or other error
     const state: JobResult["state"] =
@@ -101,4 +108,3 @@ export async function runRemoteStep(job: Job & { region: string }): Promise<JobR
     );
   }
 }
-

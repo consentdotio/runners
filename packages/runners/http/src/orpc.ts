@@ -1,5 +1,11 @@
 import { implement } from "@orpc/server";
-import { runRunners, getRunnerInfo, type Runner, type RunnerContext, type RunnerResult } from "@runners/core";
+import {
+  runRunners,
+  getRunnerInfo,
+  type Runner,
+  type RunnerContext,
+  type RunnerResult,
+} from "@runners/core";
 import { runnerContract } from "@runners/contracts";
 import type { CreateHttpRunnerOptions } from "./types";
 import type { RunnerSchemaInfo } from "./schema-discovery";
@@ -14,20 +20,28 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
   // to attach handlers. After attaching handlers, we use .router() to create the router.
   const pub = implement(runnerContract);
 
-  const executeRunners = pub
-    .execute
-    .handler(async ({ input, errors }: { input: any; errors: any }) => {
-      console.log("[runner/orpc] Received input:", JSON.stringify(input, null, 2));
+  const executeRunners = pub.execute.handler(
+    async ({ input, errors }: { input: any; errors: any }) => {
+      console.log(
+        "[runner/orpc] Received input:",
+        JSON.stringify(input, null, 2)
+      );
       console.log("[runner/orpc] Input type:", typeof input);
-      console.log("[runner/orpc] Input keys:", input ? Object.keys(input) : "null/undefined");
-      
+      console.log(
+        "[runner/orpc] Input keys:",
+        input ? Object.keys(input) : "null/undefined"
+      );
+
       // Resolve runner functions by name
       const resolvedRunners: Runner[] = [];
       const missingRunners: string[] = [];
 
       // Handle both legacy format (array of strings) and new format (array of configs)
-      const runnerConfigs: Array<{ name: string; input?: Record<string, unknown> }> = [];
-      
+      const runnerConfigs: Array<{
+        name: string;
+        input?: Record<string, unknown>;
+      }> = [];
+
       for (const runnerItem of input.runners) {
         if (typeof runnerItem === "string") {
           // Legacy format: string
@@ -61,18 +75,27 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
 
       // Validate runner inputs against schemas if available
       if (schemas) {
-        for (let i = 0; i < runnerConfigs.length; i++) {
-          const config = runnerConfigs[i];
+        for (const config of runnerConfigs) {
           const schemaInfo = schemas.get(config.name);
-          
+
           if (schemaInfo?.schema && config.input) {
             try {
               // Validate input against schema
               schemaInfo.schema.parse(config.input);
             } catch (validationError) {
               // Extract validation issues from Zod error
-              if (validationError && typeof validationError === "object" && "issues" in validationError) {
-                const zodError = validationError as { issues: Array<{ path: Array<string | number>; message: string; code: string }> };
+              if (
+                validationError &&
+                typeof validationError === "object" &&
+                "issues" in validationError
+              ) {
+                const zodError = validationError as {
+                  issues: Array<{
+                    path: Array<string | number>;
+                    message: string;
+                    code: string;
+                  }>;
+                };
                 throw errors.INPUT_VALIDATION_FAILED({
                   data: {
                     runnerName: config.name,
@@ -91,7 +114,10 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
                   issues: [
                     {
                       path: [],
-                      message: validationError instanceof Error ? validationError.message : String(validationError),
+                      message:
+                        validationError instanceof Error
+                          ? validationError.message
+                          : String(validationError),
                       code: "invalid_type",
                     },
                   ],
@@ -140,9 +166,12 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
           results: result.results.map((r) => ({
             name: r.name,
             status: r.status,
-            details: typeof r.details === "object" && r.details !== null && !Array.isArray(r.details)
-              ? r.details as Record<string, unknown>
-              : undefined,
+            details:
+              typeof r.details === "object" &&
+              r.details !== null &&
+              !Array.isArray(r.details)
+                ? (r.details as Record<string, unknown>)
+                : undefined,
             errorMessage: r.errorMessage,
             durationMs: r.durationMs,
           })),
@@ -156,20 +185,19 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
           },
         });
       }
-    });
+    }
+  );
 
-  const infoHandler = pub
-    .info
-    .handler(() => {
-      return getRunnerInfo(runners, {
-        region,
-        usageExample: {
-          method: "POST",
-          endpoint: "/api/runner/execute",
-          exampleUrl: "https://example.com",
-        },
-      });
+  const infoHandler = pub.info.handler(() => {
+    return getRunnerInfo(runners, {
+      region,
+      usageExample: {
+        method: "POST",
+        endpoint: "/api/runner/execute",
+        exampleUrl: "https://example.com",
+      },
     });
+  });
 
   // Use .router() to create the router structure matching the contract
   // This ensures the router structure matches what OpenAPIHandler expects
@@ -178,4 +206,3 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
     info: infoHandler,
   });
 }
-

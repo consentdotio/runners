@@ -13,7 +13,9 @@ export const RunnerConfigSchema = z.object({
  * Zod schema for RunRequest validation
  */
 export const RunRequestSchema = z.object({
-  runners: z.array(RunnerConfigSchema).min(1, "At least one runner is required"),
+  runners: z
+    .array(RunnerConfigSchema)
+    .min(1, "At least one runner is required"),
   mode: z.enum(["local", "remote"]),
   concurrency: z.number().int().positive().optional(),
   timeout: z.number().int().positive().optional(),
@@ -59,7 +61,6 @@ export const JobResultSchema = z.object({
   durationMs: z.number().optional(),
 });
 
-
 /**
  * Zod schema for RunSummary validation
  */
@@ -77,4 +78,3 @@ export const RunSummarySchema = z.object({
   completedAt: z.coerce.date().optional(),
   durationMs: z.number().optional(),
 });
-

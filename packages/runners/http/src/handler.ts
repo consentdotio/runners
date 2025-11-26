@@ -24,23 +24,28 @@ export async function createOrpcRunnerHandler(
 ): Promise<(req: Request) => Promise<Response>> {
   // Load schemas: prefer pre-extracted build-time metadata, fallback to runtime discovery
   let schemas = options.schemas;
-  
+
   if (!schemas) {
     // Try to load build-time extracted schemas first
-    const buildTimeMetadataPath = process.env.RUNNER_SCHEMAS_METADATA || "runner-schemas.json";
+    const buildTimeMetadataPath =
+      process.env.RUNNER_SCHEMAS_METADATA || "runner-schemas.json";
     try {
       schemas = await loadBuildTimeSchemas(buildTimeMetadataPath);
       if (schemas.size > 0) {
-        console.log(`[runners/http] Loaded ${schemas.size} schemas from build-time metadata`);
+        console.log(
+          `[runners/http] Loaded ${schemas.size} schemas from build-time metadata`
+        );
       }
     } catch {
       // Fallback to runtime discovery
       if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
-        console.log("[runners/http] Build-time schema metadata not found, using runtime discovery");
+        console.log(
+          "[runners/http] Build-time schema metadata not found, using runtime discovery"
+        );
       }
     }
   }
-  
+
   // Fallback to runtime discovery if build-time schemas not available
   if (!schemas || schemas.size === 0) {
     if (options.schemaPattern) {
@@ -66,7 +71,10 @@ export async function createOrpcRunnerHandler(
           typeof error.data === "object" &&
           "issues" in error.data
         ) {
-          console.error("[runner] Validation error:", JSON.stringify(error.data, null, 2));
+          console.error(
+            "[runner] Validation error:",
+            JSON.stringify(error.data, null, 2)
+          );
         } else {
           console.error("[runner] Error:", error);
         }
@@ -76,9 +84,7 @@ export async function createOrpcRunnerHandler(
   });
 
   const openAPIGenerator = new OpenAPIGenerator({
-    schemaConverters: [
-      new ZodToJsonSchemaConverter(),
-    ],
+    schemaConverters: [new ZodToJsonSchemaConverter()],
   });
 
   /**
@@ -92,7 +98,12 @@ export async function createOrpcRunnerHandler(
     try {
       const body = await req.clone().json();
       // Check if body is wrapped in "json" field (oRPC client default format)
-      if (body && typeof body === "object" && "json" in body && Object.keys(body).length === 1) {
+      if (
+        body &&
+        typeof body === "object" &&
+        "json" in body &&
+        Object.keys(body).length === 1
+      ) {
         // Unwrap and create new request with unwrapped body
         const unwrappedBody = body.json;
         return new Request(req.url, {
@@ -103,7 +114,10 @@ export async function createOrpcRunnerHandler(
       }
     } catch (e) {
       // If parsing fails, use original request
-      console.log("[runner/http] Failed to parse request body for unwrapping:", e);
+      console.log(
+        "[runner/http] Failed to parse request body for unwrapping:",
+        e
+      );
     }
 
     return req;
@@ -111,7 +125,7 @@ export async function createOrpcRunnerHandler(
 
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
-    
+
     // Debug: log all requests
     console.log(`[runner/http] ${req.method} ${url.pathname}`);
 
@@ -124,9 +138,7 @@ export async function createOrpcRunnerHandler(
           version: "1.0.0",
           description: "HTTP API for executing runners remotely",
         },
-        servers: [
-          { url: "/api/runner" },
-        ],
+        servers: [{ url: "/api/runner" }],
         commonSchemas: {
           RunRunnersRequest: { schema: RunRunnersRequestSchema },
           RunRunnersResponse: { schema: RunRunnersResponseSchema },
@@ -136,7 +148,7 @@ export async function createOrpcRunnerHandler(
       });
 
       // Enhance spec with runner-specific information including schemas
-      spec = await enhanceRunnerOpenAPISpec(spec, { ...options, schemas });
+      spec = enhanceRunnerOpenAPISpec(spec, { ...options, schemas });
 
       return Response.json(spec);
     }
@@ -172,10 +184,10 @@ export async function createOrpcRunnerHandler(
     // Handle API requests
     // Contract routes are /execute and /info, with prefix /api/runner they become:
     // POST /api/runner/execute and GET /api/runner/info
-    
+
     // Unwrap oRPC client's json wrapper if present (for compact inputStructure compatibility)
     const requestToHandle = await unwrapRequestIfNeeded(req);
-    
+
     const { response, matched } = await handler.handle(requestToHandle, {
       prefix: "/api/runner",
       context: {},
@@ -188,7 +200,9 @@ export async function createOrpcRunnerHandler(
     // Debug: log what didn't match
     if (!matched) {
       console.log(`[runner/http] No match for ${req.method} ${url.pathname}`);
-      console.log(`[runner/http] Handler matched: ${matched}, has response: ${!!response}`);
+      console.log(
+        `[runner/http] Handler matched: ${matched}, has response: ${!!response}`
+      );
     }
 
     return response ?? new Response("Not found", { status: 404 });

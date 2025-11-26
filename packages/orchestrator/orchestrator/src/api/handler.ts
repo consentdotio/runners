@@ -48,9 +48,7 @@ export function createOrchestratorHandler() {
   });
 
   const openAPIGenerator = new OpenAPIGenerator({
-    schemaConverters: [
-      new ZodToJsonSchemaConverter(),
-    ],
+    schemaConverters: [new ZodToJsonSchemaConverter()],
   });
 
   return async (request: Request) => {
@@ -66,17 +64,24 @@ export function createOrchestratorHandler() {
         const configuredRunners = process.env.PLAYWRIGHT_RUNNERS
           ? (() => {
               try {
-                return JSON.parse(process.env.PLAYWRIGHT_RUNNERS) as Record<string, string>;
+                return JSON.parse(process.env.PLAYWRIGHT_RUNNERS) as Record<
+                  string,
+                  string
+                >;
               } catch {
                 return undefined;
               }
             })()
           : undefined;
 
-        let description = "Orchestrator for running tests across multiple regions";
+        let description =
+          "Orchestrator for running tests across multiple regions";
         if (configuredRunners && Object.keys(configuredRunners).length > 0) {
-          description += "\n\n**Available Remote Runner Regions:**\n" +
-            Object.keys(configuredRunners).map(region => `- ${region}`).join("\n");
+          description +=
+            "\n\n**Available Remote Runner Regions:**\n" +
+            Object.keys(configuredRunners)
+              .map((region) => `- ${region}`)
+              .join("\n");
         }
 
         let spec = await openAPIGenerator.generate(orchestratorContract, {
@@ -85,9 +90,7 @@ export function createOrchestratorHandler() {
             version: "1.0.0",
             description,
           },
-          servers: [
-            { url: "/api/orchestrator" },
-          ],
+          servers: [{ url: "/api/orchestrator" }],
           commonSchemas: {
             RunRequest: { schema: RunRequestSchema },
             RunStatus: { schema: RunStatusSchema },
@@ -153,15 +156,24 @@ export function createOrchestratorHandler() {
         if (response.status === 500) {
           try {
             const errorBody = await response.clone().json();
-            console.error("[orchestrator] 500 Error details:", JSON.stringify(errorBody, null, 2));
+            console.error(
+              "[orchestrator] 500 Error details:",
+              JSON.stringify(errorBody, null, 2)
+            );
           } catch (parseError) {
-            console.error("[orchestrator] Failed to parse error response:", parseError);
+            console.error(
+              "[orchestrator] Failed to parse error response:",
+              parseError
+            );
             // Try to read as text
             try {
               const errorText = await response.clone().text();
               console.error("[orchestrator] Error response text:", errorText);
             } catch (textError) {
-              console.error("[orchestrator] Failed to read error as text:", textError);
+              console.error(
+                "[orchestrator] Failed to read error as text:",
+                textError
+              );
             }
           }
         }
@@ -177,13 +189,15 @@ export function createOrchestratorHandler() {
       // Check if it's a JSON parsing error (SyntaxError) - could be direct or wrapped
       // Check error itself, its cause chain, and message content
       let syntaxError: SyntaxError | undefined;
-      
+
       if (error instanceof SyntaxError) {
         syntaxError = error;
       } else if (error instanceof Error) {
-        if (error.name === "SyntaxError" || 
-            (error.message.includes("JSON") && error.message.includes("parse")) ||
-            error.message.includes("Expected double-quoted property name")) {
+        if (
+          error.name === "SyntaxError" ||
+          (error.message.includes("JSON") && error.message.includes("parse")) ||
+          error.message.includes("Expected double-quoted property name")
+        ) {
           syntaxError = error as SyntaxError;
         }
         // Check cause chain
@@ -206,7 +220,8 @@ export function createOrchestratorHandler() {
           {
             error: "Invalid JSON",
             message: syntaxError.message,
-            details: "The request body contains invalid JSON. Please check your JSON syntax.",
+            details:
+              "The request body contains invalid JSON. Please check your JSON syntax.",
           },
           { status: 400 }
         );
@@ -222,18 +237,24 @@ export function createOrchestratorHandler() {
         typeof error.status === "number"
       ) {
         // Extract validation issues if available
-        const issues = "data" in error && 
-          typeof error.data === "object" && 
+        const issues =
+          "data" in error &&
+          typeof error.data === "object" &&
           error.data !== null &&
           "issues" in error.data
-          ? (error.data as { issues: unknown[] }).issues
-          : undefined;
+            ? (error.data as { issues: unknown[] }).issues
+            : undefined;
 
         return Response.json(
           {
             error: "Validation failed",
-            message: error instanceof Error ? error.message : "Input validation failed",
-            issues: issues || (error instanceof Error ? [error.message] : [String(error)]),
+            message:
+              error instanceof Error
+                ? error.message
+                : "Input validation failed",
+            issues:
+              issues ||
+              (error instanceof Error ? [error.message] : [String(error)]),
           },
           { status: error.status }
         );
@@ -251,4 +272,3 @@ export function createOrchestratorHandler() {
     }
   };
 }
-

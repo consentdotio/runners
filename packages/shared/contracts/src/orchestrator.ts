@@ -14,7 +14,9 @@ export const RunnerConfigSchema = z.object({
  * Zod schema for RunRequest validation
  */
 export const RunRequestSchema = z.object({
-  runners: z.array(RunnerConfigSchema).min(1, "At least one runner is required"),
+  runners: z
+    .array(RunnerConfigSchema)
+    .min(1, "At least one runner is required"),
   mode: z.enum(["local", "remote"]),
   concurrency: z.number().int().positive().optional(),
   timeout: z.number().int().positive().optional(),
@@ -142,4 +144,3 @@ export const orchestratorContract = {
   getStatus: getRunStatus,
   getResults: getRunResults,
 };
-
