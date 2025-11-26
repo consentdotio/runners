@@ -1,0 +1,33 @@
+{
+  "name": "@runners/typescript-plugin",
+  "version": "0.0.0",
+  "description": "TypeScript Language Service Plugin for Runners SDK",
+  "keywords": [
+    "typescript",
+    "language-service-plugin",
+    "runners",
+    "playwright"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "tsc --build --clean && rm -r dist ||:",
+    "dev": "tsc --watch",
+    "test": "vitest run src",
+    "test:watch": "vitest watch src",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@runners/tsconfig": "workspace:*",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.13"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  }
+}

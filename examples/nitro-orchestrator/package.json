@@ -1,0 +1,23 @@
+{
+  "name": "@runners/example-nitro-orchestrator",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "nitro dev",
+    "build": "nitro build",
+    "start": "node .output/server/index.mjs",
+    "fmt": "pnpm biome format --write .",
+    "lint": "pnpm biome lint ."
+  },
+  "dependencies": {
+    "runners": "workspace:*"
+  },
+  "devDependencies": {
+    "@runners/typescript-plugin": "workspace:*",
+    "@oxc-transform/binding-darwin-arm64": "^0.98.0",
+    "@types/node": "catalog:",
+    "nitro": "catalog:"
+  }
+}

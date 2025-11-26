@@ -1,0 +1,1 @@
+../../../example/runners/test-from-runners-dir.ts

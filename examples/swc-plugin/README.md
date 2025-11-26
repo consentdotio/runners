@@ -90,3 +90,4 @@ The plugin will emit compilation errors for:
 See `src/tests/invalid-non-async.ts` for an example that will fail compilation.
 
 
+

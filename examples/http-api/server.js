@@ -2,37 +2,37 @@
 
 /**
  * Example HTTP server using the runners HTTP handler
- * 
+ *
  * This demonstrates how to expose a runner as an HTTP endpoint
  * for use by an orchestrator or workflow engine.
  */
 
-import { createHttpRunner } from '@runners/http';
-import { discoverRunners } from 'runners';
+import { discoverRunners } from "runners";
+import { createOrpcRunnerHandler } from "runners/http";
 
 const PORT = process.env.PORT || 3000;
-const REGION = process.env.RUNNER_REGION || 'us-east-1';
+const REGION = process.env.RUNNER_REGION || "us-east-1";
 
 // Discover runners - only functions with "use runner" directive are discovered by default
-const runnersMap = await discoverRunners('src/runners/**/*.ts');
+const runnersMap = await discoverRunners("src/runners/**/*.ts");
 const runners = Object.fromEntries(runnersMap);
 
 // Create the HTTP handler
-const handler = createHttpRunner({
+const handler = createOrpcRunnerHandler({
   runners,
   region: REGION,
 });
 
 // Simple HTTP server (using Node.js built-in)
-import { createServer } from 'node:http';
+import { createServer } from "node:http";
 
 const server = createServer(async (req, res) => {
   // Handle CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.writeHead(200);
     res.end();
     return;
@@ -40,18 +40,18 @@ const server = createServer(async (req, res) => {
 
   // Read request body
   const body = await new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => {
+    let data = "";
+    req.on("data", (chunk) => {
       data += chunk;
     });
-    req.on('end', () => {
+    req.on("end", () => {
       try {
         resolve(data ? JSON.parse(data) : {});
       } catch (e) {
         reject(e);
       }
     });
-    req.on('error', reject);
+    req.on("error", reject);
   });
 
   // Convert Node.js request to Web API Request
@@ -59,10 +59,12 @@ const server = createServer(async (req, res) => {
   const url = `http://${req.headers.host}${req.url}`;
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       headers.set(key, value);
     } else if (Array.isArray(value)) {
-      value.forEach((v) => headers.append(key, v));
+      for (const v of value) {
+        headers.append(key, v);
+      }
     }
   }
 
@@ -71,12 +73,15 @@ const server = createServer(async (req, res) => {
     webRequest = new Request(url, {
       method: req.method,
       headers,
-      body: body && Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
+      body:
+        body && Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
     });
   } catch (error) {
-    console.error('Request creation error:', error);
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Invalid request', details: error.message }));
+    console.error("Request creation error:", error);
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({ error: "Invalid request", details: error.message })
+    );
     return;
   }
 
@@ -91,24 +96,28 @@ const server = createServer(async (req, res) => {
     });
 
     res.writeHead(response.status, {
-      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+      "Content-Type":
+        response.headers.get("Content-Type") || "application/json",
       ...responseHeaders,
     });
     res.end(responseBody);
   } catch (error) {
-    console.error('Handler error:', error);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Internal server error', details: error.message }));
+    console.error("Handler error:", error);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({ error: "Internal server error", details: error.message })
+    );
   }
 });
 
 server.listen(PORT, () => {
   console.log(`Runners HTTP API server running on http://localhost:${PORT}`);
   console.log(`Region: ${REGION}`);
-  console.log(`Available runners: ${Object.keys(runners).join(', ')}`);
-  console.log('\nExample request:');
+  console.log(`Available runners: ${Object.keys(runners).join(", ")}`);
+  console.log("\nExample request:");
   console.log(`curl -X POST http://localhost:${PORT} \\`);
   console.log(`  -H "Content-Type: application/json" \\`);
-  console.log(`  -d '{"url": "https://example.com", "runners": ["exampleTitleVisibleTest"]}'`);
+  console.log(
+    `  -d '{"url": "https://example.com", "runners": ["exampleTitleVisibleTest"]}'`
+  );
 });
-

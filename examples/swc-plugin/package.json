@@ -14,9 +14,8 @@
   "devDependencies": {
     "@runners/swc-plugin": "workspace:*",
     "@swc/cli": "^0.7.9",
-    "@swc/core": "^1.15.2",
+    "@swc/core": "^1.15.3",
     "@types/node": "^24.10.1",
     "typescript": "^5.9.3"
   }
 }
-

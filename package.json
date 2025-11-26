@@ -2,8 +2,9 @@
   "name": "runners-workspace",
   "private": true,
   "license": "MIT",
+  "type": "module",
   "scripts": {
-    "build": "turbo build --filter='./packages/*'",
+    "build": "turbo build --filter='./packages/**/*'",
     "clean": "turbo clean",
     "fmt": "turbo fmt",
     "lint": "biome check",
@@ -12,9 +13,7 @@
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.7",
-    "@oxc-minify/binding-darwin-arm64": "^0.98.0",
-    "@oxc-transform/binding-darwin-arm64": "^0.98.0",
+    "@biomejs/biome": "^2.3.7",
     "@rslib/core": "^0.18.0",
     "runners": "workspace:*",
     "turbo": "^2.5.4",

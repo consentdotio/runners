@@ -5,17 +5,19 @@
   "version": "0.0.0",
   "license": "Apache-2.0",
   "scripts": {
-    "dev": "nitro dev",
+    "dev": "nitro dev --port 3001",
     "build": "nitro build",
     "start": "node .output/server/index.mjs",
     "fmt": "pnpm biome format --write .",
     "lint": "pnpm biome lint ./src"
   },
   "dependencies": {
-    "runners": "workspace:*"
+    "runners": "workspace:*",
+    "@runners/http": "workspace:*"
   },
   "devDependencies": {
     "@runners/typescript-plugin": "workspace:*",
+    "@runners/tsconfig": "workspace:*",
     "@oxc-transform/binding-darwin-arm64": "^0.98.0",
     "@types/node": "catalog:",
     "hono": "^4.9.10",
