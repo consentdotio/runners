@@ -1,0 +1,222 @@
+---
+title: HTTP API Quickstart
+description: Get started with Runners as a standalone HTTP server
+lastModified: 2025-11-26
+---
+
+This guide will help you set up Runners as a standalone HTTP API server.
+
+## Installation
+
+```bash
+pnpm add runners
+```
+
+**If you're using Playwright runners**, install Playwright browsers:
+
+```bash
+pnpm exec playwright install
+```
+
+## Setup
+
+Create a simple HTTP server:
+
+```typescript
+// server.ts
+import { createHttpRunner } from "runners/http";
+import * as runners from "./runners";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION || "us-east-1",
+});
+
+export default handler;
+```
+
+## Create Your First Runner
+
+Create a runner file:
+
+```typescript
+// runners/example-title.ts
+import { z } from "zod";
+import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
+
+const ExampleTitleInputSchema = z.object({
+  url: z.string().url(),
+});
+
+export const exampleTitleTest: Runner<
+  z.infer<typeof ExampleTitleInputSchema>
+> = async (ctx, input) => {
+  "use runner";
+
+  if (!input?.url) {
+    throw new Error("url is required");
+  }
+
+  const { page, log } = await withPlaywright(ctx, input.url);
+
+  log("Checking page title", { url: input.url });
+
+  const title = await page.title();
+  const hasTitle = title.length > 0;
+
+  return {
+    name: "example_title_check",
+    status: hasTitle ? "pass" : "fail",
+    details: { title },
+  };
+};
+```
+
+## Run the Server
+
+### Using Node.js
+
+```typescript
+// index.ts
+import { createServer } from "http";
+import handler from "./server";
+
+const server = createServer(async (req, res) => {
+  const result = await handler(req);
+  res.writeHead(result.status, result.headers);
+  res.end(result.body);
+});
+
+server.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
+});
+```
+
+### Using Express
+
+```typescript
+// index.ts
+import express from "express";
+import handler from "./server";
+
+const app = express();
+app.use(express.json());
+
+app.all("/api/runner/*", async (req, res) => {
+  const result = await handler(req);
+  res.status(result.status).set(result.headers).send(result.body);
+});
+
+app.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
+});
+```
+
+### Using Hono
+
+```typescript
+// index.ts
+import { Hono } from "hono";
+import handler from "./server";
+
+const app = new Hono();
+
+app.all("/api/runner/*", async (c) => {
+  const result = await handler(c.req.raw);
+  return new Response(result.body, {
+    status: result.status,
+    headers: result.headers,
+  });
+});
+
+export default app;
+```
+
+## Test the API
+
+### Get Runner Info
+
+```bash
+curl http://localhost:3000/api/runner/info
+```
+
+### Execute Runners
+
+```bash
+curl -X POST http://localhost:3000/api/runner/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "runners": ["exampleTitleTest"]
+  }'
+```
+
+### View API Documentation
+
+Open `http://localhost:3000/api/runner/docs` in your browser for interactive API documentation.
+
+## API Endpoints
+
+The handler provides:
+
+- `POST /api/runner/execute` - Execute runners
+- `GET /api/runner/info` - Get runner information
+- `GET /api/runner/docs` - Interactive API documentation (Scalar UI)
+- `GET /api/runner/spec.json` - OpenAPI specification
+
+## Deployment
+
+### Vercel
+
+Create `api/runner.ts`:
+
+```typescript
+import { createHttpRunner } from "runners/http";
+import * as runners from "../runners";
+
+export default createHttpRunner({
+  runners,
+  region: process.env.VERCEL_REGION || "us-east-1",
+});
+```
+
+### AWS Lambda
+
+```typescript
+// lambda.ts
+import { createHttpRunner } from "runners/http";
+import * as runners from "./runners";
+
+export const handler = createHttpRunner({
+  runners,
+  region: process.env.AWS_REGION || "us-east-1",
+});
+```
+
+### Docker
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN npx playwright install --with-deps chromium
+
+COPY package*.json ./
+RUN npm ci --production
+
+COPY dist ./dist
+COPY runners ./runners
+
+EXPOSE 3000
+
+CMD ["node", "dist/server.js"]
+```
+
+## Next Steps
+
+- Learn about [Writing Runners](/docs/frameworks/http/writing-runners)
+- Check out [Deployment](/docs/frameworks/http/deployment) for production setup
+- Explore [API Reference](/docs/reference/api) for detailed API docs
+

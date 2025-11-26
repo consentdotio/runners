@@ -1,0 +1,76 @@
+---
+title: Introduction to Runners
+description: Run any TypeScript function anywhere. Runners brings execution, reliability, and distribution to async TypeScript. Build tests and checks that can run locally, in CI, or distributed across regions with ease.
+lastModified: 2025-11-26
+---
+
+## What is Runners?
+
+Runners is an open-source SDK that transforms TypeScript functions into executable, distributable test functions. Built for modern development teams, it provides a unified solution for:
+
+- Writing simple test functions
+- Running tests locally or in CI
+- Distributing tests across multiple regions
+- Executing tests via HTTP API
+- Orchestrating multi-region test runs
+
+Gone are the days of:
+
+- Complex test infrastructure setup
+- Worrying about browser management
+- Manual container orchestration
+- Region-specific deployment complexity
+- Inconsistent test execution environments
+
+## Core Principles
+
+### 1. Developer-First
+
+Runners is built with developer experience in mind:
+
+- Write simple async functions with `"use runner"` directive
+- TypeScript-first with full type safety
+- Zod schemas for runtime validation
+- Zero configuration for local execution
+- Framework integrations for seamless deployment
+
+### 2. Run Anywhere
+
+The same runner function can run in multiple environments:
+
+- **Locally**: Via CLI for development and debugging
+- **CI/CD**: Integrated into your build pipeline
+- **HTTP API**: Exposed as an API endpoint
+- **Distributed**: Orchestrated across multiple regions globally
+
+### 3. Performance & Reliability
+
+Built with production in mind:
+
+- Schema pre-extraction for fast startup
+- Parallel execution with concurrency control
+- Automatic error handling and timeout protection
+- Normalized results across all execution modes
+- Browser reuse for Playwright-based runners
+
+### 4. Open Source
+
+Building in public for transparency and collaboration:
+
+- Inspect and understand the execution engine
+- Contribute improvements and fixes
+- Self-host for complete control
+- Trust through transparency
+
+## Get Started
+
+Ready to start running functions anywhere? Choose your path:
+
+<Cards>
+  <Card title="Quick Start Guide" description="Set up Runners in your project in under 5 minutes" href="/docs/frameworks/nitro/quickstart" />
+
+  <Card title="Writing Runners" description="Learn how to write your first runner function" href="/docs/frameworks/nitro/writing-runners" />
+
+  <Card title="Open Source" description="Contribute to Runners and help build better test infrastructure" href="/docs/oss/contributing" />
+</Cards>
+

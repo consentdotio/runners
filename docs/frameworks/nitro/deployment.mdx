@@ -1,0 +1,164 @@
+---
+title: Deployment
+description: Deploy Runners with Nitro to various platforms
+lastModified: 2025-11-26
+---
+
+Guide to deploying Nitro applications with Runners to production.
+
+## Vercel
+
+### Setup
+
+1. Ensure your `nitro.config.ts` includes the Runners module:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  runners: {
+    region: process.env.VERCEL_REGION || "us-east-1",
+  },
+});
+```
+
+2. Deploy:
+
+```bash
+NITRO_PRESET=vercel pnpm build
+npx vercel --prebuilt
+```
+
+### Environment Variables
+
+Set in Vercel dashboard:
+- `RUNNER_REGION` - Region identifier (optional, defaults to Vercel region)
+
+## Cloudflare Pages
+
+### Setup
+
+1. Configure Nitro for Cloudflare:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  preset: "cloudflare-pages",
+  runners: {
+    region: "us-east-1",
+  },
+});
+```
+
+2. Deploy:
+
+```bash
+NITRO_PRESET=cloudflare-pages pnpm build
+```
+
+## AWS Lambda
+
+### Setup
+
+1. Configure for AWS Lambda:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  preset: "aws-lambda",
+  runners: {
+    region: process.env.AWS_REGION || "us-east-1",
+  },
+});
+```
+
+2. Deploy:
+
+```bash
+NITRO_PRESET=aws-lambda pnpm build
+# Deploy using AWS CLI or Serverless Framework
+```
+
+## Docker
+
+### Dockerfile
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install Playwright browsers if needed
+RUN npx playwright install --with-deps chromium
+
+COPY package*.json ./
+RUN npm ci --production
+
+COPY .output ./.output
+
+EXPOSE 3000
+
+CMD ["node", ".output/server/index.mjs"]
+```
+
+### Build and Run
+
+```bash
+docker build -t runners-nitro .
+docker run -p 3000:3000 -e RUNNER_REGION=us-east-1 runners-nitro
+```
+
+## Kubernetes
+
+### Deployment YAML
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runners-nitro
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: runners-nitro
+  template:
+    metadata:
+      labels:
+        app: runners-nitro
+    spec:
+      containers:
+      - name: runners
+        image: runners-nitro:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: RUNNER_REGION
+          value: "us-east-1"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+```
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `RUNNER_REGION` | Region identifier | No (defaults to "us-east-1") |
+| `DEBUG` | Enable debug logging | No |
+| `RUNNERS_DEBUG` | Enable runner debug logging | No |
+
+## Next Steps
+
+- Learn about [Configuration](/docs/frameworks/nitro/configuration)
+- Check [Orchestration](/docs/frameworks/nitro/orchestration) for multi-region setup
+

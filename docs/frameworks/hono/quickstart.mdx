@@ -1,0 +1,178 @@
+---
+title: Hono Quickstart
+description: Get started with Runners in your Hono application with Nitro
+lastModified: 2025-11-26
+---
+
+This guide will help you set up Runners in your Hono application running on Nitro.
+
+## Installation
+
+```bash
+pnpm add runners
+```
+
+**If you're using Playwright runners**, install Playwright browsers:
+
+```bash
+pnpm exec playwright install
+```
+
+## Setup
+
+Add the Runners module to your `nitro.config.ts`:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  routes: {
+    "/**": "./src/index.ts", // Your Hono app
+  },
+});
+```
+
+The Runners module will automatically:
+- Discover runners from `src/**/*.ts` and `runners/**/*.ts`
+- Expose runner endpoints at `/api/runner/*`
+- Leave your Hono routes untouched
+
+## Create Your First Runner
+
+Create a runner file:
+
+```typescript
+// runners/cookie-banner.ts
+import { z } from "zod";
+import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
+
+const CookieBannerInputSchema = z.object({
+  url: z.string().url(),
+});
+
+export const cookieBannerTest: Runner<
+  z.infer<typeof CookieBannerInputSchema>
+> = async (ctx, input) => {
+  "use runner";
+
+  if (!input?.url) {
+    throw new Error("url is required");
+  }
+
+  const { page, log } = await withPlaywright(ctx, input.url);
+
+  log("Checking cookie banner", { url: input.url });
+
+  const banner = page
+    .locator("[data-cookie-banner], .cookie-banner, #cookie-banner")
+    .first();
+  const visible = await banner.isVisible();
+
+  return {
+    name: "cookie_banner_visible",
+    status: visible ? "pass" : "fail",
+    details: { visible },
+  };
+};
+```
+
+## Your Hono App
+
+Your Hono app continues to work normally:
+
+```typescript
+// src/index.ts
+import { Hono } from "hono";
+
+const app = new Hono();
+
+app.get("/", (c) => {
+  return c.json({ message: "Hello Hono!" });
+});
+
+app.get("/api/users", (c) => {
+  return c.json({ users: [] });
+});
+
+export default app;
+```
+
+## Run Your Application
+
+Start your Nitro dev server:
+
+```bash
+pnpm dev
+```
+
+## Test the API
+
+### Hono Routes
+
+```bash
+curl http://localhost:3000/
+curl http://localhost:3000/api/users
+```
+
+### Runner Endpoints
+
+```bash
+# Get runner info
+curl http://localhost:3000/api/runner/info
+
+# Execute runners
+curl -X POST http://localhost:3000/api/runner/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "runners": ["cookieBannerTest"]
+  }'
+```
+
+### View API Documentation
+
+Open `http://localhost:3000/api/runner/docs` in your browser for interactive API documentation.
+
+## Configuration
+
+Customize runner discovery and region:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  runners: {
+    pattern: ["src/**/*.ts", "runners/**/*.ts"],
+    region: process.env.RUNNER_REGION || "us-east-1",
+  },
+  routes: {
+    "/**": "./src/index.ts",
+  },
+});
+```
+
+## Production Deployment
+
+### Vercel
+
+```bash
+NITRO_PRESET=vercel pnpm build
+npx vercel --prebuilt
+```
+
+### Node.js
+
+```bash
+pnpm build
+node .output/server/index.mjs
+```
+
+## Next Steps
+
+- Learn about [Writing Runners](/docs/frameworks/hono/writing-runners)
+- Check out [Deployment](/docs/frameworks/hono/deployment) for production setup
+- Explore [API Reference](/docs/reference/api) for detailed API docs
+

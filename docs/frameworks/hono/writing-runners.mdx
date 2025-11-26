@@ -1,0 +1,46 @@
+---
+title: "Writing Runners"
+description: "Guide to creating custom runners with Hono"
+lastModified: 2025-11-26
+availableIn:
+  - framework: 'nitro'
+    url: '/docs/frameworks/nitro/writing-runners'
+    title: 'Nitro'
+  - framework: 'hono'
+    url: '/docs/frameworks/hono/writing-runners'
+    title: 'Hono'
+  - framework: 'http'
+    url: '/docs/frameworks/http/writing-runners'
+    title: 'HTTP API'
+---
+
+<import>../shared/writing-runners.mdx#overview</import>
+
+<import>../shared/writing-runners.mdx#basic-structure</import>
+
+<import>../shared/writing-runners.mdx#directive</import>
+
+<import>../shared/writing-runners.mdx#validation</import>
+
+<import>../shared/writing-runners.mdx#playwright</import>
+
+<import>../shared/writing-runners.mdx#context</import>
+
+<import>../shared/writing-runners.mdx#error-handling</import>
+
+<import>../shared/writing-runners.mdx#best-practices</import>
+
+## Hono-Specific Notes
+
+When writing runners for Hono (via Nitro):
+
+- Runners work alongside your Hono routes
+- Runner endpoints are automatically exposed at `/api/runner/*`
+- Your Hono app continues to work normally
+
+## See Also
+
+- [Configuration](/docs/frameworks/hono/configuration) - Configure runner discovery
+- [Deployment](/docs/frameworks/hono/deployment) - Deploy Hono applications
+- [API Reference](/docs/reference/api) - Complete API documentation
+

@@ -1,0 +1,134 @@
+---
+title: Nitro Quickstart
+description: Get started with Runners in your Nitro application
+lastModified: 2025-11-26
+---
+
+This guide will help you set up Runners in your Nitro application in under 5 minutes.
+
+## Installation
+
+```bash
+pnpm add runners
+```
+
+**If you're using Playwright runners**, install Playwright browsers:
+
+```bash
+pnpm exec playwright install
+```
+
+## Setup
+
+Add the Runners module to your `nitro.config.ts`:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+});
+```
+
+That's it! Runners are automatically discovered from `src/**/*.ts` and `runners/**/*.ts`.
+
+## Create Your First Runner
+
+Create a runner file:
+
+```typescript
+// runners/example-title.ts
+import { z } from "zod";
+import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
+
+const ExampleTitleInputSchema = z.object({
+  url: z.string().url(),
+});
+
+export const exampleTitleTest: Runner<
+  z.infer<typeof ExampleTitleInputSchema>
+> = async (ctx, input) => {
+  "use runner";
+
+  if (!input?.url) {
+    throw new Error("url is required");
+  }
+
+  const { page, log } = await withPlaywright(ctx, input.url);
+
+  log("Checking page title", { url: input.url });
+
+  const title = await page.title();
+  const hasTitle = title.length > 0;
+
+  return {
+    name: "example_title_check",
+    status: hasTitle ? "pass" : "fail",
+    details: { title },
+  };
+};
+```
+
+## Run Your Application
+
+Start your Nitro dev server:
+
+```bash
+pnpm dev
+```
+
+## Test the API
+
+### Get Runner Info
+
+```bash
+curl http://localhost:3000/api/runner/info
+```
+
+### Execute Runners
+
+```bash
+curl -X POST http://localhost:3000/api/runner/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "runners": ["exampleTitleTest"]
+  }'
+```
+
+### View API Documentation
+
+Open `http://localhost:3000/api/runner/docs` in your browser for interactive API documentation.
+
+## Configuration
+
+Customize runner discovery patterns and region:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  runners: {
+    pattern: ["src/**/*.ts", "runners/**/*.ts"], // Default patterns
+    region: process.env.RUNNER_REGION || "us-east-1",
+  },
+});
+```
+
+## API Endpoints
+
+The module automatically creates:
+
+- `POST /api/runner/execute` - Execute runners
+- `GET /api/runner/info` - Get runner information
+- `GET /api/runner/docs` - Interactive API documentation (Scalar UI)
+- `GET /api/runner/spec.json` - OpenAPI specification
+
+## Next Steps
+
+- Learn about [Writing Runners](/docs/frameworks/nitro/writing-runners)
+- Check out [Deployment](/docs/frameworks/nitro/deployment) for production setup
+- Explore [API Reference](/docs/reference/api) for detailed API docs
+

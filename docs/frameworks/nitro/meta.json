@@ -1,0 +1,14 @@
+{
+	"title": "Nitro",
+	"icon": "nitro",
+	"root": true,
+	"pages": [
+		"quickstart",
+		"writing-runners",
+		"configuration",
+		"deployment",
+		"orchestration",
+		"advanced"
+	]
+}
+

@@ -1,10 +1,20 @@
 ---
-title: Orchestration
-description: Multi-region orchestration guide
-lastModified: 2025-11-26
----
-Guide to running tests across multiple regions using the orchestrator.
+title: "Orchestration"
+description: "Multi-region orchestration guide"
 
+availableIn:
+  - framework: 'nitro'
+    url: '/docs/frameworks/nitro/orchestration'
+    title: 'Nitro'
+  - framework: 'hono'
+    url: '/docs/frameworks/hono/orchestration'
+    title: 'Hono'
+  - framework: 'http'
+    url: '/docs/frameworks/http/orchestration'
+    title: 'HTTP API'
+---
+
+<section id="overview">
 ## Overview
 
 The orchestrator allows you to:
@@ -12,7 +22,9 @@ The orchestrator allows you to:
 - Execute tests in parallel
 - Aggregate results from distributed runs
 - Coordinate execution across multiple runner endpoints
+</section>
 
+<section id="architecture">
 ## Architecture
 
 ```
@@ -33,7 +45,9 @@ Results Aggregated
   ↓
 Single Run Summary
 ```
+</section>
 
+<section id="setup">
 ## Setup
 
 ### 1. Install Package
@@ -77,7 +91,9 @@ export default createHttpRunner({
   region: process.env.RUNNER_REGION, // e.g., "us-east-1"
 });
 ```
+</section>
 
+<section id="usage">
 ## Usage
 
 ### Submit a Run Request
@@ -158,21 +174,6 @@ Response:
       "startedAt": "2024-01-01T00:00:00Z",
       "completedAt": "2024-01-01T00:01:00Z",
       "durationMs": 60000
-    },
-    {
-      "jobId": "job_456",
-      "region": "eu-west-1",
-      "state": "completed",
-      "results": [
-        {
-          "name": "cookieBannerTest",
-          "status": "pass",
-          "durationMs": 1456
-        }
-      ],
-      "startedAt": "2024-01-01T00:00:00Z",
-      "completedAt": "2024-01-01T00:01:00Z",
-      "durationMs": 62000
     }
   ],
   "summary": {
@@ -186,7 +187,9 @@ Response:
   "durationMs": 62000
 }
 ```
+</section>
 
+<section id="modes">
 ## Run Modes
 
 ### Remote Mode
@@ -230,7 +233,9 @@ Execute runners locally (for testing):
 **Requirements:**
 - Runners must be available locally
 - Each runner must specify a `url` in input
+</section>
 
+<section id="concurrency">
 ## Concurrency Control
 
 Control how many jobs run in parallel:
@@ -246,7 +251,9 @@ Control how many jobs run in parallel:
 - **Default**: Unlimited (all jobs run in parallel)
 - **Limited**: Set `concurrency` to limit parallel jobs
 - **Sequential**: Set `concurrency: 1` to run one at a time
+</section>
 
+<section id="timeouts">
 ## Timeouts
 
 Set timeout for entire run:
@@ -262,77 +269,9 @@ Set timeout for entire run:
 - Timeout applies to entire run (all jobs)
 - Individual job timeouts are handled by runner endpoints
 - Run status becomes `"timed_out"` if timeout exceeded
+</section>
 
-## Run States
-
-### queued
-
-Run has been submitted but not started.
-
-### running
-
-Run is in progress (one or more jobs executing).
-
-### completed
-
-All jobs completed successfully.
-
-### failed
-
-One or more jobs failed.
-
-### timed_out
-
-Run exceeded timeout.
-
-## Job Grouping
-
-The orchestrator groups runners into jobs:
-
-1. **By URL**: Runners with the same URL are grouped
-2. **By Region**: In remote mode, runners are grouped by region
-3. **One Job Per URL-Region**: Each unique URL-region combination gets one job
-
-**Example:**
-
-```json
-{
-  "runners": [
-    { "name": "test1", "region": "us-east-1", "input": { "url": "https://example.com" } },
-    { "name": "test2", "region": "us-east-1", "input": { "url": "https://example.com" } },
-    { "name": "test1", "region": "eu-west-1", "input": { "url": "https://example.com" } }
-  ],
-  "mode": "remote"
-}
-```
-
-Creates 2 jobs:
-- Job 1: `us-east-1` → runs `test1` and `test2`
-- Job 2: `eu-west-1` → runs `test1`
-
-## Error Handling
-
-### Job Failures
-
-If a job fails:
-- Job status becomes `"failed"`
-- Other jobs continue executing
-- Run status becomes `"failed"` if any job fails
-
-### Runner Errors
-
-If a runner errors:
-- Runner result has `status: "error"`
-- Job continues with other runners
-- Job status becomes `"failed"` if all runners error
-
-### Network Errors
-
-If a remote runner endpoint is unreachable:
-- Job status becomes `"failed"`
-- Error message includes connection details
-- Other jobs continue executing
-
+<section id="best-practices">
 ## Best Practices
 
 ### 1. Use Consistent URLs
@@ -386,89 +325,5 @@ if (summary.state === "failed") {
   }
 }
 ```
-
-### 5. Use Tags for Organization
-
-```json
-{
-  "runners": [ /* ... */ ],
-  "tags": ["smoke", "regression"]
-}
-```
-
-Tags are included in run metadata for filtering and organization.
-
-## Nitro Integration
-
-Use the Nitro orchestrator module:
-
-```typescript
-// nitro.config.ts
-import { defineConfig } from "nitro/config";
-
-export default defineConfig({
-  modules: ["runners/nitro-orchestrator"],
-});
-```
-
-Automatically exposes orchestrator endpoints at `/api/orchestrator/*`.
-
-## Example: Multi-Region Testing
-
-Test a website across multiple regions:
-
-```typescript
-const runRequest = {
-  runners: [
-    // US East
-    {
-      name: "cookieBannerTest",
-      region: "us-east-1",
-      input: { url: "https://example.com" }
-    },
-    {
-      name: "exampleTitleTest",
-      region: "us-east-1",
-      input: { url: "https://example.com" }
-    },
-    // EU West
-    {
-      name: "cookieBannerTest",
-      region: "eu-west-1",
-      input: { url: "https://example.com" }
-    },
-    {
-      name: "exampleTitleTest",
-      region: "eu-west-1",
-      input: { url: "https://example.com" }
-    },
-    // Asia Pacific
-    {
-      name: "cookieBannerTest",
-      region: "ap-southeast-1",
-      input: { url: "https://example.com" }
-    },
-    {
-      name: "exampleTitleTest",
-      region: "ap-southeast-1",
-      input: { url: "https://example.com" }
-    }
-  ],
-  mode: "remote",
-  concurrency: 3  // Run 3 regions in parallel
-};
-
-const { runId } = await submitRun(runRequest);
-const summary = await waitForCompletion(runId);
-
-console.log(`Total: ${summary.summary.total}`);
-console.log(`Passed: ${summary.summary.passed}`);
-console.log(`Failed: ${summary.summary.failed}`);
-```
-
-## See Also
-
-- [API Reference](./api-reference.mdx) - Complete API documentation
-- [Deployment](./deployment.mdx) - Production deployment guide
-- [Architecture](./architecture.mdx) - System architecture
+</section>
 

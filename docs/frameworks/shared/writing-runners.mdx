@@ -1,0 +1,330 @@
+---
+title: "Writing Runners"
+description: "Guide to creating custom runners"
+
+availableIn:
+  - framework: 'nitro'
+    url: '/docs/frameworks/nitro/writing-runners'
+    title: 'Nitro'
+  - framework: 'hono'
+    url: '/docs/frameworks/hono/writing-runners'
+    title: 'Hono'
+  - framework: 'http'
+    url: '/docs/frameworks/http/writing-runners'
+    title: 'HTTP API'
+---
+
+<section id="overview">
+## Overview
+
+This guide covers everything you need to know about writing effective runners.
+</section>
+
+<section id="basic-structure">
+## Basic Runner Structure
+
+A runner is an async function that:
+1. Has the `"use runner"` directive
+2. Accepts `RunnerContext` and optional input 
+3. Returns a `RunnerResult`
+
+```typescript
+import type { Runner } from "runners";
+
+export const myRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  // Your logic here
+  
+  return {
+    name: "my_runner",
+    status: "pass", // or "fail" or "error"
+    details: { /* optional */ },
+  };
+};
+```
+</section>
+
+<section id="directive">
+## The "use runner" Directive
+
+The directive tells the discovery system that this function is a runner. It can be:
+
+### Function-Level (Recommended)
+```typescript
+export const runner: Runner = async (ctx) => {
+  "use runner";
+  // Only this function is a runner
+};
+```
+
+### Module-Level
+```typescript
+"use runner";
+
+export const runner1: Runner = async (ctx) => {
+  // All exported async functions are runners
+};
+
+export const runner2: Runner = async (ctx) => {
+  // This is also a runner
+};
+```
+
+**Best Practice**: Use function-level directives for clarity and to avoid accidentally marking helper functions as runners.
+</section>
+
+<section id="validation">
+## Input and Output Validation
+
+Runners support validation for both input and output using Zod or Standard Schema. Input schemas are validated at runtime, while output schemas provide TypeScript typing for the `details` field.
+
+### Input Validation
+
+Use Zod schemas to validate and type your input:
+
+```typescript
+import { z } from "zod";
+
+const MyInputSchema = z.object({
+  url: z.string().url(),
+  timeout: z.number().positive().optional(),
+});
+
+export const validatedRunner: Runner<
+  z.infer<typeof MyInputSchema>
+> = async (ctx, input) => {
+  "use runner";
+  
+  // input is typed and validated
+  const url = input.url; // string
+  const timeout = input.timeout; // number | undefined
+};
+```
+
+The runner harness will automatically validate input against your schema before execution.
+
+### Output Validation
+
+Define output schemas to type the `details` field in your results:
+
+```typescript
+import { z } from "zod";
+
+const MyInputSchema = z.object({
+  url: z.string().url(),
+});
+
+const MyOutputSchema = z.object({
+  title: z.string(),
+  description: z.string().optional(),
+});
+
+export const typedRunner: Runner<
+  z.infer<typeof MyInputSchema>,
+  z.infer<typeof MyOutputSchema>
+> = async (ctx, input) => {
+  "use runner";
+  
+  return {
+    name: "typed_runner",
+    status: "pass",
+    details: {
+      title: "Example", // Typed by MyOutputSchema
+      description: "Optional", // Typed as string | undefined
+    },
+  };
+};
+```
+</section>
+
+<section id="playwright">
+## Using Playwright
+
+For browser automation, use the `withPlaywright()` helper:
+
+```typescript
+import { withPlaywright } from "runners/playwright";
+
+export const browserRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  const { page, log } = await withPlaywright(ctx, input.url);
+  
+  await page.goto(input.url);
+  const title = await page.title();
+  
+  log("Page loaded", { title });
+  
+  return {
+    name: "browser_check",
+    status: "pass",
+    details: { title },
+  };
+};
+```
+
+The `withPlaywright()` helper:
+- Launches a browser instance
+- Provides a `page` object
+- Handles browser lifecycle
+- Manages browser contexts
+</section>
+
+<section id="context">
+## Runner Context
+
+The `RunnerContext` provides:
+
+```typescript
+type RunnerContext = {
+  region?: string;
+  runId?: string;
+  log: (message: string, meta?: Record<string, unknown>) => void;
+};
+```
+
+### Logging
+
+Use `ctx.log()` for structured logging:
+
+```typescript
+export const loggedRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  ctx.log("Starting check", { url: input.url });
+  
+  // ... do work ...
+  
+  ctx.log("Check complete", { result: "pass" });
+  
+  return { name: "logged", status: "pass" };
+};
+```
+
+### Region and Run ID
+
+Access region and run ID from context:
+
+```typescript
+export const contextualRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  const region = ctx.region || "unknown";
+  const runId = ctx.runId || "local";
+  
+  return {
+    name: "contextual",
+    status: "pass",
+    details: { region, runId },
+  };
+};
+```
+</section>
+
+<section id="error-handling">
+## Error Handling
+
+Runners can throw errors, which are automatically caught and converted to error results:
+
+```typescript
+export const errorHandlingRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  try {
+    // Your logic
+    return { name: "success", status: "pass" };
+  } catch (error) {
+    // Errors are caught and converted to error status
+    throw error;
+  }
+};
+```
+
+Errors result in:
+```json
+{
+  "name": "runner_name",
+  "status": "error",
+  "errorMessage": "Error message here"
+}
+```
+</section>
+
+<section id="best-practices">
+## Best Practices
+
+### 1. Use Descriptive Names
+
+```typescript
+// Good
+export const cookieBannerVisibleTest: Runner = async (ctx, input) => {
+  "use runner";
+  // ...
+};
+
+// Bad
+export const test1: Runner = async (ctx, input) => {
+  "use runner";
+  // ...
+};
+```
+
+### 2. Validate Input
+
+Always define input schemas:
+
+```typescript
+const InputSchema = z.object({
+  url: z.string().url(),
+});
+
+export const validatedRunner: Runner<z.infer<typeof InputSchema>> = async (ctx, input) => {
+  "use runner";
+  // input is validated
+};
+```
+
+### 3. Return Meaningful Details
+
+```typescript
+return {
+  name: "check",
+  status: "pass",
+  details: {
+    // Include useful information
+    title: "Page Title",
+    url: input.url,
+    timestamp: Date.now(),
+  },
+};
+```
+
+### 4. Use Logging
+
+Log important events:
+
+```typescript
+ctx.log("Starting check", { url: input.url });
+ctx.log("Check complete", { result: "pass", duration: 1234 });
+```
+
+### 5. Handle Edge Cases
+
+```typescript
+export const robustRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  if (!input?.url) {
+    return {
+      name: "robust",
+      status: "fail",
+      errorMessage: "URL is required",
+    };
+  }
+  
+  // Continue with logic
+};
+```
+</section>
+

@@ -1,0 +1,97 @@
+---
+title: Configuration
+description: Configure Runners in Nitro applications
+lastModified: 2025-11-26
+---
+
+Complete configuration options for the Runners Nitro module.
+
+## Basic Configuration
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  runners: {
+    pattern: ["src/**/*.ts", "runners/**/*.ts"],
+    region: process.env.RUNNER_REGION || "us-east-1",
+  },
+});
+```
+
+## Configuration Options
+
+### `pattern`
+
+File patterns to scan for runners. Defaults to `["src/**/*.ts", "runners/**/*.ts"]`.
+
+```typescript
+export default defineConfig({
+  modules: ["runners/nitro"],
+  runners: {
+    pattern: [
+      "src/**/*.ts",
+      "runners/**/*.ts",
+      "tests/**/*.ts", // Custom pattern
+    ],
+  },
+});
+```
+
+### `region`
+
+Region identifier for runner context. Can be set via environment variable.
+
+```typescript
+export default defineConfig({
+  modules: ["runners/nitro"],
+  runners: {
+    region: process.env.RUNNER_REGION || "us-east-1",
+  },
+});
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `RUNNER_REGION` | Region identifier | `"us-east-1"` |
+| `DEBUG` | Enable debug logging | `false` |
+| `RUNNERS_DEBUG` | Enable runner debug logging | `false` |
+
+## Build Configuration
+
+The module automatically:
+- Extracts schemas at build time
+- Bundles runners for optimal performance
+- Creates virtual handlers for API routes
+
+### Custom Build Directory
+
+```typescript
+export default defineConfig({
+  modules: ["runners/nitro"],
+  buildDir: ".nitro", // Custom build directory
+});
+```
+
+## Development Mode
+
+In development, the module:
+- Watches for runner file changes
+- Rebuilds incrementally
+- Externalizes runner bundles to prevent reloads
+
+## Production Mode
+
+In production, the module:
+- Performs one-time build
+- Optimizes bundles
+- Pre-extracts schemas
+
+## Next Steps
+
+- Learn about [Deployment](/docs/frameworks/nitro/deployment)
+- Check [Quickstart](/docs/frameworks/nitro/quickstart) for setup guide
+

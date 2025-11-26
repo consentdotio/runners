@@ -1,0 +1,14 @@
+{
+	"title": "Hono",
+	"icon": "hono",
+	"root": true,
+	"pages": [
+		"quickstart",
+		"writing-runners",
+		"configuration",
+		"deployment",
+		"orchestration",
+		"advanced"
+	]
+}
+

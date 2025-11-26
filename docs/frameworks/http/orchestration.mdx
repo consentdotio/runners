@@ -1,0 +1,79 @@
+---
+title: "Orchestration"
+description: "Multi-region orchestration with HTTP API"
+lastModified: 2025-11-26
+availableIn:
+  - framework: 'nitro'
+    url: '/docs/frameworks/nitro/orchestration'
+    title: 'Nitro'
+  - framework: 'hono'
+    url: '/docs/frameworks/hono/orchestration'
+    title: 'Hono'
+  - framework: 'http'
+    url: '/docs/frameworks/http/orchestration'
+    title: 'HTTP API'
+---
+
+This guide covers setting up and using multi-region orchestration as a standalone HTTP server.
+
+<import>../shared/orchestration.mdx#overview</import>
+
+<import>../shared/orchestration.mdx#architecture</import>
+
+## Setup
+
+### Installation
+
+```bash
+pnpm add runners
+```
+
+### Create Orchestrator Server
+
+Create a standalone orchestrator server:
+
+```typescript
+// server.ts
+import { createOrchestratorHandler } from "runners/orchestrator";
+
+export default createOrchestratorHandler();
+```
+
+The handler provides orchestrator endpoints that can be integrated with any HTTP server framework.
+
+### Configure Runner Endpoints
+
+Set the `PLAYWRIGHT_RUNNERS` environment variable:
+
+```bash
+export PLAYWRIGHT_RUNNERS='{
+  "us-east-1": "https://runner-us-east-1.example.com/api/runner",
+  "eu-west-1": "https://runner-eu-west-1.example.com/api/runner",
+  "ap-southeast-1": "https://runner-ap-southeast-1.example.com/api/runner"
+}'
+```
+
+<import>../shared/orchestration.mdx#usage</import>
+
+## API Endpoints
+
+The orchestrator provides:
+
+- `POST /api/orchestrator` - Submit a new run request
+- `GET /api/orchestrator/{runId}/status` - Get run status
+- `GET /api/orchestrator/{runId}` - Get run results
+- `GET /api/orchestrator/docs` - Interactive API documentation
+- `GET /api/orchestrator/spec.json` - OpenAPI specification
+
+<import>../shared/orchestration.mdx#modes</import>
+
+<import>../shared/orchestration.mdx#concurrency</import>
+
+<import>../shared/orchestration.mdx#timeouts</import>
+
+<import>../shared/orchestration.mdx#best-practices</import>
+
+## See Also
+
+- [API Reference](/docs/reference/api) - Complete API documentation
+- [Deployment](/docs/frameworks/http/deployment) - Production deployment guide

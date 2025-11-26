@@ -1,0 +1,46 @@
+---
+title: "Writing Runners"
+description: "Guide to creating custom runners with Nitro"
+lastModified: 2025-11-26
+availableIn:
+  - framework: 'nitro'
+    url: '/docs/frameworks/nitro/writing-runners'
+    title: 'Nitro'
+  - framework: 'hono'
+    url: '/docs/frameworks/hono/writing-runners'
+    title: 'Hono'
+  - framework: 'http'
+    url: '/docs/frameworks/http/writing-runners'
+    title: 'HTTP API'
+---
+
+<import>../shared/writing-runners.mdx#overview</import>
+
+<import>../shared/writing-runners.mdx#basic-structure</import>
+
+<import>../shared/writing-runners.mdx#directive</import>
+
+<import>../shared/writing-runners.mdx#validation</import>
+
+<import>../shared/writing-runners.mdx#playwright</import>
+
+<import>../shared/writing-runners.mdx#context</import>
+
+<import>../shared/writing-runners.mdx#error-handling</import>
+
+<import>../shared/writing-runners.mdx#best-practices</import>
+
+## Nitro-Specific Notes
+
+When writing runners for Nitro:
+
+- Runners are automatically discovered from `src/**/*.ts` and `runners/**/*.ts`
+- Schemas are extracted at build time for optimal performance
+- Runners are bundled automatically during Nitro build
+
+## See Also
+
+- [Configuration](/docs/frameworks/nitro/configuration) - Configure runner discovery
+- [Deployment](/docs/frameworks/nitro/deployment) - Deploy Nitro applications
+- [API Reference](/docs/reference/api) - Complete API documentation
+
