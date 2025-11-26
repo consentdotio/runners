@@ -428,7 +428,7 @@ function cloneDocumentationRepository(
 	buildMode: BuildMode,
 	branch: GitBranch
 ): void {
-	const repoUrl = 'https://github.com/consentdotio/runners-docs.git';
+	const repoUrl = 'https://github.com/consentdotio/runner-docs.git';
 	const basicAuth = Buffer.from(
 		`x-access-token:${authenticationToken}`
 	).toString('base64');

@@ -30,7 +30,7 @@ it("findPreviousComment", async () => {
     id: "1",
     author: authenticatedUser,
     isMinimized: false,
-    body: "<!-- c15t:runners-docs-preview:START -->previous message<!-- c15t:runners-docs-preview:END -->",
+    body: "<!-- c15t:runner-docs-preview:START -->previous message<!-- c15t:runner-docs-preview:END -->",
   };
   const commentWithCustomHeader = {
     id: "2",
@@ -99,7 +99,7 @@ it("findPreviousComment with explicit authorLogin", async () => {
     id: "7",
     author: { login: "consentdotio" },
     isMinimized: false,
-    body: "<!-- c15t:runners-docs-preview:START -->previous message<!-- c15t:runners-docs-preview:END -->",
+    body: "<!-- c15t:runner-docs-preview:START -->previous message<!-- c15t:runner-docs-preview:END -->",
   };
   vi.spyOn(octokit, "graphql").mockResolvedValue({
     viewer: { login: "github-actions[bot]" },
@@ -135,7 +135,7 @@ describe("updateComment", () => {
     expect(octokit.graphql).toBeCalledWith(expect.any(String), {
       input: {
         id: "456",
-        body: "<!-- c15t:runners-docs-preview:START -->\nhello there\n<!-- c15t:runners-docs-preview:END -->",
+        body: "<!-- c15t:runner-docs-preview:START -->\nhello there\n<!-- c15t:runner-docs-preview:END -->",
       },
     });
     expect(
@@ -188,7 +188,7 @@ describe("createComment", () => {
       issue_number: 456,
       owner: repo.owner,
       repo: repo.repo,
-      body: "<!-- c15t:runners-docs-preview:START -->\nhello there\n<!-- c15t:runners-docs-preview:END -->",
+      body: "<!-- c15t:runner-docs-preview:START -->\nhello there\n<!-- c15t:runner-docs-preview:END -->",
     });
     await expect(
       createComment(octokit, repo, 456, "hello there", "TypeA")
@@ -327,7 +327,7 @@ describe("commentsEqual", () => {
     {
       body: "body",
       previous:
-        "<!-- c15t:runners-docs-preview:START -->\nbody\n<!-- c15t:runners-docs-preview:END -->",
+        "<!-- c15t:runner-docs-preview:START -->\nbody\n<!-- c15t:runner-docs-preview:END -->",
       header: "",
       expected: true,
     },

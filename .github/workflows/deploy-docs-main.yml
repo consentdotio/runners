@@ -53,7 +53,7 @@ jobs:
           target: production
 
           # Comment behavior
-          header: runners-docs-main
+          header: runner-docs-main
           append: "true"
           hide_details: "true"
 
