@@ -1,7 +1,7 @@
 {
   "name": "runners",
-  "version": "1.0.2",
-  "description": "A small SDK for writing Playwright tests that can be executed by an API orchestrator or a local CLI",
+  "version": "1.0.4",
+  "description": "A small SDK for writing runners that can be executed by an API orchestrator or a local CLI, without worrying about browsers, containers, or regions",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -44,7 +44,8 @@
     "runners": "./dist/cli.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "rslib build",
@@ -52,6 +53,7 @@
     "dev": "rslib build --watch",
     "fmt": "pnpm biome format --write .",
     "lint": "pnpm biome lint ./src",
+    "prepublishOnly": "cp ../../README.md README.md",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
