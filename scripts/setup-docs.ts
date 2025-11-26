@@ -158,9 +158,9 @@ class FetchScriptError extends Error {
  * Immutable configuration constants for the fetch process
  */
 const FETCH_CONFIG: FetchConfiguration = {
-	TEMP_DOCS_DIR: join(tmpdir(), 'c15t-docs'),
+	TEMP_DOCS_DIR: join(tmpdir(), 'runner-docs'),
 	DOCS_APP_DIR: '.docs',
-	DOCS_REPO_URL: 'https://github.com/consentdotio/c15t-docs.git',
+	DOCS_REPO_URL: 'https://github.com/consentdotio/runner-docs.git',
 	DEFAULT_BRANCH: 'main',
 } as const;
 
@@ -428,7 +428,7 @@ function cloneDocumentationRepository(
 	buildMode: BuildMode,
 	branch: GitBranch
 ): void {
-	const repoUrl = 'https://github.com/consentdotio/c15t-docs.git';
+	const repoUrl = 'https://github.com/consentdotio/runners-docs.git';
 	const basicAuth = Buffer.from(
 		`x-access-token:${authenticationToken}`
 	).toString('base64');

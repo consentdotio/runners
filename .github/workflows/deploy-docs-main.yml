@@ -53,7 +53,7 @@ jobs:
           target: production
 
           # Comment behavior
-          header: c15t-docs-main-scheduled
+          header: runners-docs-main
           append: "true"
           hide_details: "true"
 
