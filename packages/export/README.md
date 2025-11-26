@@ -1,1 +1,1 @@
-/Users/christopherburns/glados/r/runner/README.md
+../../README.md
