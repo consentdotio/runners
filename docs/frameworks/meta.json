@@ -1,0 +1,12 @@
+{
+	"title": "Frameworks",
+	"icon": "code",
+	"root": true,
+	"pages": [
+		"index",
+		"nitro",
+		"hono",
+		"http"
+	]
+}
+

@@ -1,0 +1,99 @@
+---
+title: Deployment
+description: Deploy Hono applications with Runners to various platforms
+lastModified: 2025-11-26
+---
+
+Guide to deploying Hono applications with Runners (via Nitro) to production.
+
+## Vercel
+
+### Setup
+
+1. Configure Nitro for Vercel:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  routes: {
+    "/**": "./src/index.ts", // Your Hono app
+  },
+  runners: {
+    region: process.env.VERCEL_REGION || "us-east-1",
+  },
+});
+```
+
+2. Deploy:
+
+```bash
+NITRO_PRESET=vercel pnpm build
+npx vercel --prebuilt
+```
+
+## Node.js
+
+### Setup
+
+1. Build:
+
+```bash
+pnpm build
+```
+
+2. Run:
+
+```bash
+node .output/server/index.mjs
+```
+
+### PM2
+
+```bash
+pm2 start .output/server/index.mjs --name runners-hono
+```
+
+## Docker
+
+### Dockerfile
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install Playwright browsers if needed
+RUN npx playwright install --with-deps chromium
+
+COPY package*.json ./
+RUN npm ci --production
+
+COPY .output ./.output
+
+EXPOSE 3000
+
+CMD ["node", ".output/server/index.mjs"]
+```
+
+### Build and Run
+
+```bash
+docker build -t runners-hono .
+docker run -p 3000:3000 -e RUNNER_REGION=us-east-1 runners-hono
+```
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `RUNNER_REGION` | Region identifier | No (defaults to "us-east-1") |
+| `DEBUG` | Enable debug logging | No |
+| `RUNNERS_DEBUG` | Enable runner debug logging | No |
+
+## Next Steps
+
+- Learn about [Configuration](/docs/frameworks/hono/configuration)
+- Check [Quickstart](/docs/frameworks/hono/quickstart) for setup guide
+

@@ -1,0 +1,591 @@
+---
+title: API Reference
+description: Complete API documentation for the Runners SDK
+lastModified: 2025-11-26
+---
+
+
+
+## Core Types
+
+### Runner
+
+```typescript
+type Runner<TInput, TOutput> = (
+  ctx: RunnerContext,
+  input?: TInput
+) => Promise<RunnerResult<TOutput>>;
+```
+
+A runner function that accepts context and optional input, returns a result.
+
+**Type Parameters:**
+- `TInput`: Input type (usually inferred from Zod schema) - validated at runtime
+- `TOutput`: Output details type (usually inferred from Zod schema) - provides TypeScript typing for `details` field
+
+**Example with both schemas:**
+
+```typescript
+import { z } from "zod";
+import type { Runner } from "runners";
+
+const InputSchema = z.object({ url: z.string().url() });
+const OutputSchema = z.object({ title: z.string() });
+
+const myRunner: Runner<
+  z.infer<typeof InputSchema>,
+  z.infer<typeof OutputSchema>
+> = async (ctx, input) => {
+  "use runner";
+  return {
+    name: "my_runner",
+    status: "pass",
+    details: { title: "Example" }, // Typed by OutputSchema
+  };
+};
+```
+
+### RunnerContext
+
+```typescript
+type RunnerContext = {
+  region?: string;
+  runId?: string;
+  log: (message: string, meta?: Record<string, unknown>) => void;
+};
+```
+
+Context provided to all runners.
+
+**Properties:**
+- `region?: string` - Region identifier (e.g., "us-east-1")
+- `runId?: string` - Unique run identifier
+- `log(message, meta?)` - Logging function
+
+### RunnerResult
+
+```typescript
+type RunnerResult<TDetails = Record<string, unknown>> = {
+  name: string;
+  status: "pass" | "fail" | "error";
+  details?: TDetails;
+  errorMessage?: string;
+  durationMs?: number;
+};
+```
+
+Result returned by runners.
+
+**Properties:**
+- `name: string` - Unique runner identifier
+- `status: "pass" | "fail" | "error"` - Execution status
+- `details?: TDetails` - Optional custom data
+- `errorMessage?: string` - Error message if status is "error"
+- `durationMs?: number` - Execution duration in milliseconds
+
+### RunStatus
+
+```typescript
+type RunStatus = "pass" | "fail" | "error";
+```
+
+Possible runner execution statuses.
+
+## Runner API
+
+### runRunners
+
+Execute one or more runners programmatically.
+
+```typescript
+import { runRunners } from "runners";
+
+const result = await runRunners({
+  runners: [myRunner],
+  region?: "us-east-1",
+  runId?: "custom-run-id",
+  timeout?: 30000,
+});
+```
+
+**Parameters:**
+- `runners: Runner[]` - Array of runner functions to execute
+- `region?: string` - Optional region identifier
+- `runId?: string` - Optional run identifier
+- `timeout?: number` - Optional timeout in milliseconds
+
+**Returns:**
+```typescript
+type RunRunnersResult = {
+  region?: string;
+  runId?: string;
+  results: RunnerResult[];
+};
+```
+
+**Example:**
+```typescript
+import { runRunners } from "runners";
+import { cookieBannerTest } from "./runners";
+
+const result = await runRunners({
+  runners: [cookieBannerTest],
+  region: "us-east-1",
+});
+
+console.log(result.results);
+```
+
+## HTTP API
+
+### createHttpRunner
+
+Create an HTTP handler for exposing runners as an API.
+
+```typescript
+import { createHttpRunner } from "runners/http";
+
+const handler = createHttpRunner({
+  runners: runnerModule,
+  region?: "us-east-1",
+});
+```
+
+**Parameters:**
+- `runners: Record<string, Runner>` - Object mapping runner names to functions
+- `region?: string` - Optional region identifier
+
+**Returns:** HTTP request handler (framework-agnostic)
+
+**Example:**
+```typescript
+import { createHttpRunner } from "runners/http";
+import * as runners from "./runners";
+
+export default createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+});
+```
+
+### Endpoints
+
+#### POST /api/runner/execute
+
+Execute one or more runners.
+
+**Request:**
+```json
+{
+  "url": "https://example.com",
+  "runners": ["runnerName"] | [
+    {
+      "name": "runnerName",
+      "input": { "url": "https://example.com" }
+    }
+  ],
+  "runId": "optional-run-id",
+  "region": "optional-region"
+}
+```
+
+**Response:**
+```json
+{
+  "region": "us-east-1",
+  "runId": "generated-run-id",
+  "results": [
+    {
+      "name": "runner_name",
+      "status": "pass",
+      "details": {},
+      "durationMs": 1234
+    }
+  ]
+}
+```
+
+#### GET /api/runner/info
+
+Get information about available runners.
+
+**Response:**
+```json
+{
+  "runners": ["runner1", "runner2"],
+  "count": 2,
+  "region": "us-east-1",
+  "usage": {
+    "method": "POST",
+    "endpoint": "/api/runner/execute",
+    "example": {
+      "url": "https://example.com",
+      "runners": ["runner1"]
+    }
+  }
+}
+```
+
+#### GET /api/runner/docs
+
+Interactive API documentation (Scalar UI).
+
+#### GET /api/runner/spec.json
+
+OpenAPI specification in JSON format.
+
+## Orchestrator API
+
+### createOrchestratorHandler
+
+Create an HTTP handler for the orchestrator service.
+
+```typescript
+import { createOrchestratorHandler } from "runners/orchestrator";
+
+const handler = createOrchestratorHandler();
+```
+
+**Returns:** HTTP request handler
+
+**Configuration:**
+
+Set `PLAYWRIGHT_RUNNERS` environment variable:
+
+```bash
+PLAYWRIGHT_RUNNERS='{
+  "us-east-1": "https://runner-us-east-1.example.com/api/runner",
+  "eu-west-1": "https://runner-eu-west-1.example.com/api/runner"
+}'
+```
+
+### Endpoints
+
+#### POST /api/orchestrator
+
+Submit a new run request.
+
+**Request:**
+```json
+{
+  "runners": [
+    {
+      "name": "cookieBannerTest",
+      "region": "us-east-1",
+      "input": {
+        "url": "https://example.com"
+      }
+    }
+  ],
+  "mode": "remote",
+  "concurrency": 3,
+  "timeout": 30000
+}
+```
+
+**Response:**
+```json
+{
+  "runId": "generated-run-id"
+}
+```
+
+#### GET /api/orchestrator/&#123;runId&#125;/status
+
+Get run status.
+
+**Response:**
+```json
+{
+  "runId": "run-id",
+  "state": "running",
+  "totalJobs": 3,
+  "completedJobs": 1,
+  "failedJobs": 0,
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:01:00Z"
+}
+```
+
+#### GET /api/orchestrator/&#123;runId&#125;
+
+Get run results.
+
+**Response:**
+```json
+{
+  "runId": "run-id",
+  "state": "completed",
+  "jobs": [
+    {
+      "jobId": "job-id",
+      "region": "us-east-1",
+      "state": "completed",
+      "results": [
+        {
+          "name": "cookieBannerTest",
+          "status": "pass",
+          "durationMs": 1234
+        }
+      ],
+      "startedAt": "2024-01-01T00:00:00Z",
+      "completedAt": "2024-01-01T00:01:00Z",
+      "durationMs": 60000
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "errored": 0
+  },
+  "createdAt": "2024-01-01T00:00:00Z",
+  "completedAt": "2024-01-01T00:01:00Z",
+  "durationMs": 60000
+}
+```
+
+### Orchestrator Types
+
+#### RunRequest
+
+```typescript
+type RunRequest = {
+  runners: RunnerConfig[];
+  mode: "local" | "remote";
+  concurrency?: number;
+  timeout?: number;
+  tags?: string[];
+  runId?: string;
+};
+```
+
+#### RunnerConfig
+
+```typescript
+type RunnerConfig = {
+  name: string;
+  region?: string;
+  input?: Record<string, unknown>;
+};
+```
+
+#### RunStatus
+
+```typescript
+type RunStatus = {
+  runId: string;
+  state: "queued" | "running" | "completed" | "failed" | "timed_out";
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+```
+
+#### RunSummary
+
+```typescript
+type RunSummary = {
+  runId: string;
+  state: "queued" | "running" | "completed" | "failed" | "timed_out";
+  jobs: JobResult[];
+  summary: {
+    total: number;
+    passed: number;
+    failed: number;
+    errored: number;
+  };
+  createdAt: Date;
+  completedAt?: Date;
+  durationMs?: number;
+};
+```
+
+## CLI API
+
+### Commands
+
+#### run
+
+Execute runners locally.
+
+```bash
+npx runners run [options] [runner-names...]
+```
+
+**Options:**
+- `--url <url>` - URL to pass to runners
+- `--config <path>` - Path to config file
+- `--region <region>` - Region identifier
+- `--timeout <ms>` - Timeout in milliseconds
+- `--help` - Show help
+
+**Examples:**
+```bash
+# Run specific runners
+npx runners run --url https://example.com runner1 runner2
+
+# Use config file
+npx runners run --config runners.config.ts
+
+# Run all discovered runners
+npx runners run --url https://example.com
+```
+
+### Config File
+
+```typescript
+import { defineConfig } from "runners/config";
+
+export default defineConfig({
+  url?: string;
+  region?: string;
+  runners?: string[];
+  timeout?: number;
+});
+```
+
+## Playwright API
+
+### withPlaywright
+
+Get Playwright context for browser automation.
+
+```typescript
+import { withPlaywright } from "runners/playwright";
+
+const { page, url, region, log } = await withPlaywright(ctx, url);
+```
+
+**Parameters:**
+- `ctx: RunnerContext` - Runner context
+- `url: string` - URL to navigate to
+
+**Returns:**
+```typescript
+type PlaywrightContext = {
+  page: Page;
+  url: string;
+  region?: string;
+  log: (message: string, meta?: Record<string, unknown>) => void;
+  browser: Browser;
+  context: BrowserContext;
+};
+```
+
+**Example:**
+```typescript
+export const browserRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  const { page, log } = await withPlaywright(ctx, input.url);
+  
+  await page.goto(input.url);
+  const title = await page.title();
+  
+  log("Page loaded", { title });
+  
+  return {
+    name: "title_check",
+    status: "pass",
+    details: { title },
+  };
+};
+```
+
+## Framework Integrations
+
+### Nitro Module
+
+```typescript
+// nitro.config.ts
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+});
+```
+
+Automatically:
+- Discovers runners from `src/**/*.ts` and `runners/**/*.ts`
+- Exposes `/api/runner/execute` endpoint
+- Serves OpenAPI docs at `/api/runner/docs`
+
+### Nitro Orchestrator Module
+
+```typescript
+// nitro.config.ts
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro-orchestrator"],
+});
+```
+
+Exposes orchestrator endpoints at `/api/orchestrator/*`.
+
+## Error Types
+
+### RunnerNotFoundError
+
+Thrown when a requested runner is not found.
+
+```typescript
+{
+  code: "RUNNER_NOT_FOUND",
+  message: "One or more runners not found",
+  data: {
+    missingRunners: string[];
+    availableRunners: string[];
+  }
+}
+```
+
+### InputValidationError
+
+Thrown when runner input validation fails.
+
+```typescript
+{
+  code: "INPUT_VALIDATION_FAILED",
+  message: "Runner input validation failed",
+  data: {
+    runnerName: string;
+    issues: Array<{
+      path: (string | number)[];
+      message: string;
+      code: string;
+    }>;
+  }
+}
+```
+
+### ExecutionError
+
+Thrown when runner execution fails.
+
+```typescript
+{
+  code: "EXECUTION_FAILED",
+  message: "Runner execution failed",
+  data: {
+    details: string;
+  }
+}
+```
+
+## Type Exports
+
+All types are exported from the main package:
+
+```typescript
+import type {
+  Runner,
+  RunnerContext,
+  RunnerResult,
+  RunStatus,
+} from "runners";
+```
+

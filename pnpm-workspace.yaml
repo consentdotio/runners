@@ -1,6 +1,8 @@
 packages:
   - packages/**/*
   - examples/*
+  - internals/**/*
+  - docs
 
 catalog:
   "@types/node": 22.19.0

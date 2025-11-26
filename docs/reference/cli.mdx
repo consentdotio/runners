@@ -1,0 +1,319 @@
+---
+title: CLI Usage
+description: Complete guide to using the Runners command-line interface.
+lastModified: 2025-11-26
+---
+
+## Installation
+
+The CLI is included with the `runners` package:
+
+```bash
+npm install runners
+# or
+pnpm add runners
+```
+
+## Basic Usage
+
+### Run Specific Runners
+
+```bash
+npx runners run --url https://example.com runner1 runner2
+```
+
+### Run All Discovered Runners
+
+```bash
+npx runners run --url https://example.com
+```
+
+### Use a Config File
+
+```bash
+npx runners run --config runners.config.ts
+```
+
+## Commands
+
+### run
+
+Execute runners locally.
+
+**Syntax:**
+```bash
+npx runners run [options] [runner-names...]
+```
+
+**Options:**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--url <url>` | URL to pass to all runners | None |
+| `--config <path>` | Path to config file | `runners.config.ts` |
+| `--region <region>` | Region identifier | None |
+| `--timeout <ms>` | Timeout in milliseconds | 30000 |
+| `--help` | Show help message | - |
+| `--version` | Show version | - |
+
+**Examples:**
+
+```bash
+# Run specific runners with URL
+npx runners run --url https://example.com cookieBannerTest exampleTitleTest
+
+# Run with config file
+npx runners run --config runners.config.ts
+
+# Run all discovered runners
+npx runners run --url https://example.com
+
+# Run with custom timeout
+npx runners run --url https://example.com --timeout 60000 runner1
+
+# Run with region
+npx runners run --url https://example.com --region us-east-1 runner1
+```
+
+## Configuration File
+
+Create `runners.config.ts` in your project root:
+
+```typescript
+import { defineConfig } from "runners/config";
+
+export default defineConfig({
+  url: "https://example.com",
+  region: "us-east-1",
+  runners: ["cookieBannerTest", "exampleTitleTest"],
+  timeout: 30000,
+});
+```
+
+**Config Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `url` | `string` | URL to pass to runners |
+| `region` | `string` | Region identifier |
+| `runners` | `string[]` | List of runner names to execute |
+| `timeout` | `number` | Timeout in milliseconds |
+
+**Example:**
+
+```typescript
+import { defineConfig } from "runners/config";
+
+export default defineConfig({
+  url: "https://example.com",
+  runners: ["cookieBannerTest"],
+});
+```
+
+## Runner Discovery
+
+The CLI automatically discovers runners from:
+
+- `src/**/*.ts`
+- `runners/**/*.ts`
+
+Runners must have the `"use runner"` directive to be discovered.
+
+### Module-Level Directive
+
+```typescript
+"use runner";
+
+export const runner1: Runner = async (ctx) => { /* ... */ };
+export const runner2: Runner = async (ctx) => { /* ... */ };
+```
+
+### Function-Level Directive
+
+```typescript
+export const runner: Runner = async (ctx) => {
+  "use runner";
+  // ... implementation
+};
+```
+
+## Output Format
+
+### Success
+
+```
+✓ Running runners...
+
+✓ cookieBannerTest
+  Status: pass
+  Duration: 1234ms
+
+✓ exampleTitleTest
+  Status: pass
+  Duration: 567ms
+
+✓ All runners passed (2/2)
+```
+
+### Failure
+
+```
+✓ Running runners...
+
+✓ cookieBannerTest
+  Status: pass
+  Duration: 1234ms
+
+✗ exampleTitleTest
+  Status: fail
+  Duration: 567ms
+  Error: Title not found
+
+✗ Some runners failed (1/2)
+```
+
+### Error
+
+```
+✓ Running runners...
+
+✓ cookieBannerTest
+  Status: pass
+  Duration: 1234ms
+
+✗ exampleTitleTest
+  Status: error
+  Duration: 567ms
+  Error: Failed to load page: timeout
+
+✗ Some runners errored (1/2)
+```
+
+## Exit Codes
+
+- `0` - All runners passed
+- `1` - One or more runners failed or errored
+- `2` - Invalid command or configuration
+
+## Advanced Usage
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+DEBUG=true npx runners run --url https://example.com runner1
+```
+
+Or:
+
+```bash
+RUNNERS_DEBUG=true npx runners run --url https://example.com runner1
+```
+
+### Custom Input
+
+Pass custom input to runners via config:
+
+```typescript
+import { defineConfig } from "runners/config";
+
+export default defineConfig({
+  url: "https://example.com",
+  runners: [
+    {
+      name: "customRunner",
+      input: {
+        url: "https://example.com",
+        customField: "value",
+      },
+    },
+  ],
+});
+```
+
+### Multiple URLs
+
+Run the same runners against multiple URLs:
+
+```bash
+for url in https://example.com https://test.com; do
+  npx runners run --url "$url" runner1 runner2
+done
+```
+
+### CI Integration
+
+Example GitHub Actions workflow:
+
+```yaml
+name: Run Runners
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm exec playwright install
+      - run: pnpm exec runners run --url https://example.com
+```
+
+## Troubleshooting
+
+### Runners Not Found
+
+If runners aren't being discovered:
+
+1. Check that files are in `src/` or `runners/` directories
+2. Verify `"use runner"` directive is present
+3. Ensure runners are exported
+4. Check file extensions are `.ts` (not `.js`)
+
+### Playwright Errors
+
+If you see Playwright executable errors:
+
+```bash
+pnpm exec playwright install
+```
+
+### Timeout Issues
+
+Increase timeout for slow runners:
+
+```bash
+npx runners run --url https://example.com --timeout 60000 slowRunner
+```
+
+### Type Errors
+
+Ensure TypeScript is properly configured:
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+## Tips
+
+1. **Use Config Files**: Avoid long command lines with config files
+2. **Debug Mode**: Use `DEBUG=true` to see detailed logs
+3. **Exit Codes**: Use exit codes in CI/CD pipelines
+4. **Parallel Execution**: Runners execute sequentially; use orchestrator for parallel execution
+5. **Error Handling**: Check exit codes and error messages for debugging
+
+## See Also
+
+- [Writing Runners](/docs/frameworks/nitro/writing-runners) - Guide to creating runners
+- [Getting Started](/docs/getting-started) - Quick start guide
+- [API Reference](/docs/reference/api) - Complete API documentation
+

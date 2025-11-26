@@ -1,0 +1,326 @@
+---
+title: Contributing
+description: How to contribute to the project
+lastModified: 2025-11-26
+---
+
+Thank you for your interest in contributing to Runners! This guide will help you get started.
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js 18+ (or 20+, 22+, 24+)
+- pnpm 10.20.0+
+- Rust (for schema-extractor and swc-plugin)
+
+### Clone and Install
+
+```bash
+git clone https://github.com/your-org/runners.git
+cd runners
+pnpm install
+```
+
+### Build
+
+```bash
+# Build all packages
+pnpm build
+
+# Build specific package
+pnpm --filter @runners/core build
+
+# Watch mode
+pnpm --filter @runners/core dev
+```
+
+### Run Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run specific package tests
+pnpm --filter @runners/core test
+
+# Watch mode
+pnpm --filter @runners/core test:watch
+```
+
+## Project Structure
+
+```
+runners/
+├── packages/
+│   ├── export/          # Main package (barrel exports)
+│   ├── runners/
+│   │   ├── core/        # Core execution engine
+│   │   ├── http/        # HTTP handler
+│   │   ├── nitro/       # Nitro integration
+│   │   ├── playwright/  # Playwright integration
+│   │   └── ...
+│   ├── orchestrator/
+│   │   ├── orchestrator/      # Orchestrator service
+│   │   └── nitro-orchestrator/ # Nitro orchestrator
+│   └── shared/
+│       ├── cli/         # CLI implementation
+│       ├── config/      # Configuration
+│       ├── contracts/   # API contracts
+│       └── ...
+├── examples/            # Example projects
+└── docs/                # Documentation
+```
+
+## Code Style
+
+We use Biome for formatting and linting:
+
+```bash
+# Format code
+pnpm fmt
+
+# Lint code
+pnpm lint
+
+# Fix issues
+pnpm lint --fix
+```
+
+### TypeScript
+
+- Use TypeScript strict mode
+- Prefer explicit types over `any`
+- Use Zod for runtime validation
+- Export types from `types.ts` files
+
+### Naming Conventions
+
+- **Files**: `kebab-case.ts`
+- **Functions**: `camelCase`
+- **Types**: `PascalCase`
+- **Constants**: `UPPER_SNAKE_CASE`
+
+## Adding Features
+
+### 1. Create a Branch
+
+```bash
+git checkout -b feature/your-feature-name
+```
+
+### 2. Make Changes
+
+- Write code following project conventions
+- Add tests for new functionality
+- Update documentation
+- Update types if needed
+
+### 3. Test Your Changes
+
+```bash
+# Run tests
+pnpm test
+
+# Build packages
+pnpm build
+
+# Test examples
+cd examples/hono
+pnpm dev
+```
+
+### 4. Commit Changes
+
+We use conventional commits:
+
+```bash
+git commit -m "feat: add new feature"
+git commit -m "fix: fix bug"
+git commit -m "docs: update documentation"
+```
+
+### 5. Create Pull Request
+
+- Write a clear description
+- Reference related issues
+- Include screenshots if UI changes
+- Ensure CI passes
+
+## Writing Tests
+
+### Unit Tests
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { myFunction } from "./my-module";
+
+describe("myFunction", () => {
+  it("should do something", () => {
+    expect(myFunction()).toBe(expected);
+  });
+});
+```
+
+### Integration Tests
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { runRunners } from "runners";
+
+describe("Runner Integration", () => {
+  it("should execute runners", async () => {
+    const result = await runRunners({
+      runners: [myRunner],
+    });
+    
+    expect(result.results).toHaveLength(1);
+  });
+});
+```
+
+## Documentation
+
+### Updating Docs
+
+1. Edit files in `docs/`
+2. Use clear, concise language
+3. Include code examples
+4. Update table of contents if needed
+
+### Adding Examples
+
+1. Create example in `examples/`
+2. Add README with setup instructions
+3. Ensure example works end-to-end
+4. Link from main README
+
+## Package Development
+
+### Adding a New Package
+
+1. Create directory in `packages/`
+2. Add `package.json` with proper name
+3. Add `tsconfig.json` extending shared config
+4. Add `rslib.config.ts` for build
+5. Export from main package if public
+
+### Updating Dependencies
+
+```bash
+# Add dependency
+pnpm add package-name --filter @runners/core
+
+# Add dev dependency
+pnpm add -D package-name --filter @runners/core
+
+# Update all dependencies
+pnpm update
+```
+
+## Rust Packages
+
+### schema-extractor
+
+Located in `packages/runners/schema-extractor/`:
+
+```bash
+cd packages/runners/schema-extractor
+
+# Build
+cargo build
+
+# Test
+cargo test
+
+# Build WASM
+wasm-pack build --target nodejs
+```
+
+### swc-plugin-runners
+
+Located in `packages/runners/swc-plugin-runners/`:
+
+```bash
+cd packages/runners/swc-plugin-runners
+
+# Build
+cargo build
+
+# Test
+cargo test
+
+# Build WASM
+wasm-pack build --target nodejs
+```
+
+## Debugging
+
+### Enable Debug Logging
+
+```bash
+DEBUG=true pnpm dev
+RUNNERS_DEBUG=true pnpm dev
+ORCHESTRATOR_DEBUG=true pnpm dev
+```
+
+### VS Code Debugging
+
+Create `.vscode/launch.json`:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Runner",
+      "program": "${workspaceFolder}/packages/runners/core/src/index.ts",
+      "env": {
+        "DEBUG": "true"
+      }
+    }
+  ]
+}
+```
+
+## Release Process
+
+1. Update version in `packages/export/package.json`
+2. Update CHANGELOG.md
+3. Create release commit
+4. Tag release
+5. Publish to npm
+
+```bash
+# Version bump (handled by release script)
+npm version patch|minor|major
+
+# Publish
+pnpm --filter runners publish
+```
+
+## Getting Help
+
+- **Issues**: Open an issue on GitHub
+- **Discussions**: Use GitHub Discussions
+- **Discord**: Join our Discord server (if available)
+
+## Code of Conduct
+
+- Be respectful and inclusive
+- Welcome newcomers
+- Focus on constructive feedback
+- Follow project conventions
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
+
+## See Also
+
+- [API Reference](/docs/reference/api) - API documentation
+- [Getting Started](/docs/getting-started) - Quick start guide
+- [Writing Runners](/docs/frameworks/nitro/writing-runners) - Runner authoring guide
+

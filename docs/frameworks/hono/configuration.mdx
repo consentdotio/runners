@@ -1,0 +1,54 @@
+---
+title: Configuration
+description: Configure Runners in Hono applications
+lastModified: 2025-11-26
+---
+
+Configuration options for Runners in Hono applications running on Nitro.
+
+## Basic Configuration
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  routes: {
+    "/**": "./src/index.ts", // Your Hono app
+  },
+  runners: {
+    pattern: ["src/**/*.ts", "runners/**/*.ts"],
+    region: process.env.RUNNER_REGION || "us-east-1",
+  },
+});
+```
+
+## Hono App Structure
+
+Your Hono app (`src/index.ts`) works independently:
+
+```typescript
+import { Hono } from "hono";
+
+const app = new Hono();
+
+app.get("/", (c) => {
+  return c.json({ message: "Hello Hono!" });
+});
+
+// Your routes here
+
+export default app;
+```
+
+The Runners module automatically adds `/api/runner/*` endpoints without interfering with your Hono routes.
+
+## Configuration Options
+
+See [Nitro Configuration](/docs/frameworks/nitro/configuration) for all available options.
+
+## Next Steps
+
+- Learn about [Deployment](/docs/frameworks/hono/deployment)
+- Check [Quickstart](/docs/frameworks/hono/quickstart) for setup guide
+

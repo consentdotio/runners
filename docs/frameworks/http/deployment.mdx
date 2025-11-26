@@ -1,0 +1,133 @@
+---
+title: Deployment
+description: Deploy standalone HTTP API runners to various platforms
+lastModified: 2025-11-26
+---
+
+Guide to deploying standalone HTTP API runners to production.
+
+## Vercel
+
+### Setup
+
+1. Create `api/runner.ts`:
+
+```typescript
+import { createHttpRunner } from "runners/http";
+import * as runners from "../runners";
+
+export default createHttpRunner({
+  runners,
+  region: process.env.VERCEL_REGION || "us-east-1",
+});
+```
+
+2. Deploy:
+
+```bash
+vercel deploy
+```
+
+## AWS Lambda
+
+### Setup
+
+1. Create handler:
+
+```typescript
+// lambda.ts
+import { createHttpRunner } from "runners/http";
+import * as runners from "./runners";
+
+export const handler = createHttpRunner({
+  runners,
+  region: process.env.AWS_REGION || "us-east-1",
+});
+```
+
+2. Package and deploy:
+
+```bash
+npm run build
+zip -r function.zip dist node_modules runners
+aws lambda update-function-code --function-name runners --zip-file fileb://function.zip
+```
+
+## Docker
+
+### Dockerfile
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install Playwright browsers
+RUN npx playwright install --with-deps chromium
+
+COPY package*.json ./
+RUN npm ci --production
+
+COPY dist ./dist
+COPY runners ./runners
+
+EXPOSE 3000
+
+CMD ["node", "dist/server.js"]
+```
+
+### Build and Run
+
+```bash
+docker build -t runners-http .
+docker run -p 3000:3000 -e RUNNER_REGION=us-east-1 runners-http
+```
+
+## Kubernetes
+
+### Deployment YAML
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runners-http
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: runners-http
+  template:
+    metadata:
+      labels:
+        app: runners-http
+    spec:
+      containers:
+      - name: runners
+        image: runners-http:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: RUNNER_REGION
+          value: "us-east-1"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+```
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `RUNNER_REGION` | Region identifier | No (defaults to "us-east-1") |
+| `DEBUG` | Enable debug logging | No |
+| `RUNNERS_DEBUG` | Enable runner debug logging | No |
+
+## Next Steps
+
+- Check [Quickstart](/docs/frameworks/http/quickstart) for setup guide
+

@@ -1,0 +1,10 @@
+{
+	"title": "Open Source",
+	"icon": "github",
+	"root": true,
+	"pages": [
+		"contributing",
+		"license"
+	]
+}
+

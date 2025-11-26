@@ -1,0 +1,213 @@
+---
+title: "Advanced Topics"
+description: "Advanced patterns and best practices"
+
+availableIn:
+  - framework: 'nitro'
+    url: '/docs/frameworks/nitro/advanced'
+    title: 'Nitro'
+  - framework: 'hono'
+    url: '/docs/frameworks/hono/advanced'
+    title: 'Hono'
+  - framework: 'http'
+    url: '/docs/frameworks/http/advanced'
+    title: 'HTTP API'
+---
+
+<section id="custom-schemas">
+## Custom Schema Validators
+
+Runners support Standard Schema-compatible validators, not just Zod:
+
+```typescript
+import { StandardSchemaV1 } from "@standard-schema/spec";
+import type { Runner } from "runners";
+
+// Using a custom validator
+const CustomInputSchema: StandardSchemaV1<string, string> = {
+  "~standard": {
+    validate: (value) => {
+      if (typeof value !== "string") {
+        return { issues: [{ message: "Must be string" }] };
+      }
+      return { value };
+    },
+  },
+};
+
+export const customRunner: Runner<typeof CustomInputSchema> = async (
+  ctx,
+  input
+) => {
+  "use runner";
+  // input is typed as string
+  return { name: "custom", status: "pass" };
+};
+```
+</section>
+
+<section id="performance">
+## Performance Optimization
+
+### 1. Schema Pre-extraction
+
+Schemas are extracted at build time for performance:
+
+```bash
+# Build extracts schemas automatically
+npm run build
+```
+
+### 2. Parallel Execution
+
+Use orchestrator for parallel execution:
+
+```typescript
+const runRequest = {
+  runners: [/* ... */],
+  mode: "remote",
+  concurrency: 10, // Run 10 jobs in parallel
+};
+```
+
+### 3. Browser Reuse
+
+Playwright contexts are reused when possible:
+
+```typescript
+// Multiple runners can share browser context
+const { page } = await withPlaywright(ctx, url);
+// Browser is reused for subsequent runners
+```
+
+### 4. Lazy Loading
+
+Runners are loaded only when needed:
+
+```typescript
+// Runners loaded on-demand
+const runner = await import(`./runners/${runnerName}`);
+```
+</section>
+
+<section id="error-recovery">
+## Error Recovery
+
+Implement retry logic:
+
+```typescript
+async function runWithRetry(
+  runner: Runner,
+  context: RunnerContext,
+  input: unknown,
+  maxRetries = 3
+) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await runner(context, input);
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff
+      await new Promise(resolve =>
+        setTimeout(resolve, Math.pow(2, attempt) * 1000)
+      );
+    }
+  }
+}
+```
+</section>
+
+<section id="testing">
+## Testing Runners
+
+### Unit Testing
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { cookieBannerTest } from "./runners";
+
+describe("cookieBannerTest", () => {
+  it("should pass when banner is visible", async () => {
+    const context = {
+      log: () => {},
+      region: "us-east-1",
+    };
+    
+    const result = await cookieBannerTest(context, {
+      url: "https://example.com",
+    });
+    
+    expect(result.status).toBe("pass");
+  });
+});
+```
+
+### Integration Testing
+
+```typescript
+import { runRunners } from "runners";
+import { cookieBannerTest } from "./runners";
+
+describe("Runner Integration", () => {
+  it("should execute runners", async () => {
+    const result = await runRunners({
+      runners: [cookieBannerTest],
+      region: "us-east-1",
+    });
+    
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].status).toBe("pass");
+  });
+});
+```
+</section>
+
+<section id="advanced-playwright">
+## Advanced Playwright Usage
+
+### Custom Browser Options
+
+```typescript
+import { withPlaywright } from "runners/playwright";
+
+export const customBrowserRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  const { browser } = await withPlaywright(ctx, input.url);
+  
+  // Access browser directly
+  const context = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+    userAgent: "Custom User Agent",
+  });
+  
+  const page = await context.newPage();
+  // ... use custom page
+};
+```
+
+### Multiple Pages
+
+```typescript
+export const multiPageRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  const { browser } = await withPlaywright(ctx, input.url);
+  
+  const pages = await Promise.all([
+    browser.newPage(),
+    browser.newPage(),
+    browser.newPage(),
+  ]);
+  
+  // Use multiple pages
+  await Promise.all(pages.map(page => page.goto(input.url)));
+  
+  // ... rest of logic
+};
+```
+</section>
+

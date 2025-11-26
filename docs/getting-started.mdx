@@ -1,0 +1,276 @@
+---
+title: Getting Started
+description: Quick start guide for new users
+lastModified: 2025-11-26
+---
+
+This guide will help you get started with Runners in just a few minutes.
+
+## Installation
+
+Install the `runners` package:
+
+```bash
+npm install runners
+# or
+pnpm add runners
+# or
+yarn add runners
+```
+
+If you plan to use Playwright-based runners (browser automation), install Playwright browsers:
+
+```bash
+npx playwright install
+# or
+pnpm exec playwright install
+```
+
+This only needs to be done once per machine.
+
+## Your First Runner
+
+Create a simple runner file:
+
+```typescript
+// src/runners/example-title.ts
+import { z } from "zod";
+import type { Runner } from "runners";
+import { withPlaywright } from "runners/playwright";
+
+// Input schema - validates input at runtime
+const ExampleTitleInputSchema = z.object({
+  url: z.string().url(),
+});
+
+// Output schema - types the details field
+const ExampleTitleOutputSchema = z.object({
+  title: z.string(),
+});
+
+export const exampleTitleTest: Runner<
+  z.infer<typeof ExampleTitleInputSchema>,
+  z.infer<typeof ExampleTitleOutputSchema>
+> = async (ctx, input) => {
+  "use runner";
+
+  if (!input?.url) {
+    throw new Error("url is required");
+  }
+
+  const { page, log } = await withPlaywright(ctx, input.url);
+
+  log("Checking page title", { url: input.url });
+
+  const title = await page.title();
+  const hasTitle = title.length > 0;
+
+  return {
+    name: "example_title_check",
+    status: hasTitle ? "pass" : "fail",
+    details: { title }, // Typed by ExampleTitleOutputSchema
+  };
+};
+
+// Export schemas for automatic discovery (optional but recommended)
+export const exampleTitleTestInputSchema = ExampleTitleInputSchema;
+export const exampleTitleTestOutputSchema = ExampleTitleOutputSchema;
+```
+
+Key points:
+- The `"use runner"` directive marks this function as a runner
+- Use `withPlaywright()` to get browser access
+- Return a `RunnerResult` with `name`, `status`, and optional `details`
+- **Input schemas** validate input at runtime
+- **Output schemas** provide TypeScript typing for the `details` field
+- Export schemas following naming conventions for automatic discovery
+
+## Running Locally
+
+Use the CLI to run your runner:
+
+```bash
+npx runners run \
+  --url https://example.com \
+  exampleTitleTest
+```
+
+The CLI will:
+1. Discover runners from `src/**/*.ts` and `runners/**/*.ts`
+2. Execute the specified runner(s)
+3. Print formatted results
+4. Exit with non-zero code on failures
+
+### Using a Config File
+
+Create `runners.config.ts`:
+
+```typescript
+import { defineConfig } from "runners/config";
+
+export default defineConfig({
+  url: "https://example.com",
+  runners: ["exampleTitleTest"],
+});
+```
+
+Then run:
+
+```bash
+npx runners run --config runners.config.ts
+```
+
+## Running via HTTP API
+
+Create an HTTP server:
+
+```typescript
+// server.ts
+import { createHttpRunner } from "runners/http";
+import * as runners from "./src/runners";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION || "us-east-1",
+});
+
+export default handler;
+```
+
+Start your server and make a request:
+
+```bash
+curl -X POST http://localhost:3000/api/runner/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "runners": ["exampleTitleTest"]
+  }'
+```
+
+Response:
+
+```json
+{
+  "region": "us-east-1",
+  "runId": "generated-run-id",
+  "results": [
+    {
+      "name": "example_title_check",
+      "status": "pass",
+      "details": { "title": "Example Domain" },
+      "durationMs": 1234
+    }
+  ]
+}
+```
+
+## Framework Integration
+
+### Nitro / Hono
+
+Add the Nitro module to your `nitro.config.ts`:
+
+```typescript
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro"],
+  // ... rest of config
+});
+```
+
+Runners are automatically discovered and exposed at `/api/runner/execute`.
+
+### Standalone HTTP Server
+
+See the [HTTP API example](/examples/http-api/) for a complete standalone server.
+
+## Writing More Complex Runners
+
+### Multiple Checks
+
+```typescript
+export const comprehensiveTest: Runner = async (ctx, input) => {
+  "use runner";
+
+  const { page, log } = await withPlaywright(ctx, input.url);
+
+  const checks = {
+    hasTitle: false,
+    hasMetaDescription: false,
+    hasH1: false,
+  };
+
+  // Check title
+  const title = await page.title();
+  checks.hasTitle = title.length > 0;
+
+  // Check meta description
+  const metaDesc = await page.locator('meta[name="description"]').first();
+  checks.hasMetaDescription = await metaDesc.count() > 0;
+
+  // Check H1
+  const h1 = await page.locator("h1").first();
+  checks.hasH1 = await h1.count() > 0;
+
+  const allPassed = Object.values(checks).every(Boolean);
+
+  return {
+    name: "comprehensive_checks",
+    status: allPassed ? "pass" : "fail",
+    details: checks,
+  };
+};
+```
+
+### Custom Input Schema
+
+```typescript
+const CustomInputSchema = z.object({
+  url: z.string().url(),
+  timeout: z.number().positive().optional(),
+  selectors: z.array(z.string()).optional(),
+});
+
+export const customTest: Runner<
+  z.infer<typeof CustomInputSchema>
+> = async (ctx, input) => {
+  "use runner";
+
+  const { page } = await withPlaywright(ctx, input.url);
+
+  // Use custom input fields
+  const timeout = input.timeout || 5000;
+  const selectors = input.selectors || ["body"];
+
+  // ... implementation
+};
+```
+
+### Without Playwright
+
+Runners don't require Playwright. You can write pure logic runners:
+
+```typescript
+export const apiCheck: Runner = async (ctx, input) => {
+  "use runner";
+
+  const response = await fetch(input.apiUrl);
+  const data = await response.json();
+
+  return {
+    name: "api_check",
+    status: response.ok ? "pass" : "fail",
+    details: { statusCode: response.status, data },
+  };
+};
+```
+
+## Next Steps
+
+- Read [Writing Runners](/docs/frameworks/nitro/writing-runners) for detailed runner authoring guide
+- Check [CLI Usage](/docs/reference/cli) for advanced CLI features
+- Explore [Orchestration](/docs/frameworks/nitro/orchestration) for multi-region execution
+- See [Examples](/examples/) for complete working examples
+
