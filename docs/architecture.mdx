@@ -1,0 +1,351 @@
+---
+title: Architecture
+description: System design, components, and how everything fits together
+lastModified: 2025-11-26
+---
+
+This document describes the architecture of the Runners project, including its components, data flow, and design decisions.
+
+## Overview
+
+Runners is a distributed test execution framework that allows you to write simple test functions (runners) that can be executed locally, via HTTP API, or across multiple regions through an orchestrator.
+
+## System Components
+
+### Core Packages
+
+#### `@runners/core`
+The core execution engine that:
+- Discovers runners from your codebase
+- Executes runners with proper context
+- Handles errors and timeouts
+- Normalizes results
+
+**Key Files:**
+- `src/runner.ts` - Runner execution logic
+- `src/schema-discovery.ts` - Discovers runners using directives
+- `src/types.ts` - Core type definitions
+
+#### `@runners/playwright`
+Optional Playwright integration that:
+- Launches browser instances
+- Provides page objects
+- Handles browser lifecycle
+- Manages browser contexts
+
+**Key Files:**
+- `src/index.ts` - `withPlaywright()` helper function
+
+#### `@runners/http`
+HTTP handler for exposing runners as an API:
+- Creates HTTP endpoints (`/api/runner/execute`, `/api/runner/info`)
+- Validates requests using Zod schemas
+- Returns normalized JSON responses
+- Serves OpenAPI documentation
+
+**Key Files:**
+- `src/handler.ts` - HTTP request handler
+- `src/schema-loader.ts` - Loads pre-extracted schemas
+
+#### `@runners/nitro`
+Nitro framework integration:
+- Registers Nitro module
+- Auto-discovers runners
+- Exposes API routes
+- Integrates with Nitro's build system
+
+#### `@runners/orchestrator`
+Multi-region orchestration service:
+- Accepts run requests with multiple runners and regions
+- Fans out jobs to different regions
+- Executes jobs in parallel (with concurrency control)
+- Aggregates results from all regions
+
+**Key Components:**
+- `fanoutJobs()` - Groups runners by URL/region into jobs
+- `runWorkflow()` - Main orchestration workflow
+- `runRemoteStep()` - Executes jobs on remote runners
+- `runLocalStep()` - Executes jobs locally
+- `aggregateResults()` - Combines results from multiple jobs
+
+#### `@runners/nitro-orchestrator`
+Nitro integration for the orchestrator:
+- Registers orchestrator as Nitro module
+- Exposes orchestrator API routes
+- Integrates with Nitro's build system
+
+### Shared Packages
+
+#### `@runners/cli`
+Command-line interface:
+- Parses commands and flags
+- Discovers runners
+- Executes runners locally
+- Provides formatted output
+
+**Structure:**
+- `src/commands/` - Individual command implementations
+- `src/context/` - CLI context creation
+- `src/utils/` - Shared utilities (logger, etc.)
+
+#### `@runners/config`
+Configuration management:
+- `defineConfig()` helper for TypeScript config files
+- Validates configuration
+- Provides type-safe config
+
+#### `@runners/contracts`
+Shared API contracts using oRPC:
+- `runnerContract` - Runner API contract
+- `orchestratorContract` - Orchestrator API contract
+- Zod schemas for validation
+- Type-safe client/server types
+
+#### `@runners/errors`
+Error handling utilities:
+- Custom error types
+- Error formatting
+- Error serialization
+
+### Build Tools
+
+#### `@runners/schema-extractor`
+Rust-based tool that:
+- Extracts runner schemas at build time
+- Generates metadata JSON files
+- Used by build plugins to pre-extract schemas
+
+#### `@runners/swc-plugin-runners`
+SWC plugin that:
+- Removes `"use runner"` directives during compilation
+- Integrates with schema extraction
+- Optimizes runner discovery
+
+#### `@runners/typescript-plugin`
+TypeScript plugin that:
+- Provides type checking for runners
+- Validates runner signatures
+- Provides IDE autocomplete
+
+## Data Flow
+
+### Local Execution (CLI)
+
+```
+User Command
+    ↓
+CLI Parser
+    ↓
+Schema Discovery (scans files for "use runner")
+    ↓
+Runner Execution (@runners/core)
+    ↓
+Results Aggregation
+    ↓
+Formatted Output
+```
+
+### HTTP Execution
+
+```
+HTTP Request
+    ↓
+HTTP Handler (@runners/http)
+    ↓
+Request Validation (Zod schemas)
+    ↓
+Schema Loading (pre-extracted metadata)
+    ↓
+Runner Execution (@runners/core)
+    ↓
+Response Serialization
+    ↓
+JSON Response
+```
+
+### Orchestrated Execution
+
+```
+Orchestrator Request
+    ↓
+fanoutJobs() - Groups runners by URL/region
+    ↓
+Job Creation (one per URL-region combination)
+    ↓
+Parallel Execution (with concurrency control)
+    ├─→ Remote Step (HTTP call to runner endpoint)
+    └─→ Local Step (direct execution)
+    ↓
+Result Aggregation
+    ↓
+Run Summary Response
+```
+
+## Runner Discovery
+
+Runners are discovered using the `"use runner"` directive:
+
+### Module-Level Directive
+```typescript
+"use runner";
+
+export const runner1: Runner = async (ctx) => { /* ... */ };
+export const runner2: Runner = async (ctx) => { /* ... */ };
+```
+
+### Function-Level Directive
+```typescript
+export const runner: Runner = async (ctx) => {
+  "use runner";
+  // ... implementation
+};
+```
+
+The discovery process:
+1. Scans `src/**/*.ts` and `runners/**/*.ts` (configurable)
+2. Parses AST to find `"use runner"` directives
+3. Extracts exported async functions with directives
+4. Validates function signatures match `Runner` type
+5. Extracts input/output schemas (Zod or Standard Schema)
+
+## Schema Extraction
+
+Schemas are extracted at build time for performance:
+
+1. **Build Time**: `schema-extractor` (Rust) scans runner files
+2. **Metadata Generation**: Creates JSON files with runner metadata
+3. **Runtime Loading**: HTTP handler loads pre-extracted schemas
+4. **Validation**: Uses schemas for request validation
+
+This avoids parsing TypeScript at runtime, improving performance.
+
+## Type System
+
+### Runner Types
+
+```typescript
+type Runner<TInput, TOutput> = (
+  ctx: RunnerContext,
+  input?: TInput
+) => Promise<RunnerResult<TOutput>>;
+```
+
+Runners support both input and output validation:
+- **Input schemas** (`TInput`) - Validated at runtime before execution
+- **Output schemas** (`TOutput`) - Provide TypeScript typing for the `details` field
+
+Runners can use:
+- **Zod schemas** - Most common, full TypeScript inference and runtime validation
+- **Standard Schema** - Compatible with other validators
+
+**Example:**
+```typescript
+const InputSchema = z.object({ url: z.string().url() });
+const OutputSchema = z.object({ title: z.string() });
+
+const runner: Runner<
+  z.infer<typeof InputSchema>,
+  z.infer<typeof OutputSchema>
+> = async (ctx, input) => {
+  // input is validated against InputSchema at runtime
+  // details is typed by OutputSchema
+  return {
+    name: "runner",
+    status: "pass",
+    details: { title: "Example" }, // Typed by OutputSchema
+  };
+};
+```
+
+### Context Types
+
+```typescript
+type RunnerContext = {
+  region?: string;
+  runId?: string;
+  log: (message: string, meta?: Record<string, unknown>) => void;
+};
+
+type PlaywrightContext = RunnerContext & {
+  page: Page;
+  url: string;
+  browser: Browser;
+  context: BrowserContext;
+};
+```
+
+### Result Types
+
+```typescript
+type RunnerResult<TDetails = Record<string, unknown>> = {
+  name: string;
+  status: "pass" | "fail" | "error";
+  details?: TDetails;
+  errorMessage?: string;
+  durationMs?: number;
+};
+```
+
+## Error Handling
+
+Errors are handled at multiple levels:
+
+1. **Runner Level**: Runners can throw errors, caught and converted to `error` status
+2. **Execution Level**: Timeouts, validation errors, runner not found
+3. **HTTP Level**: Request validation, serialization errors
+4. **Orchestrator Level**: Job failures, aggregation errors
+
+All errors are normalized into `RunnerResult` with `status: "error"`.
+
+## Concurrency Model
+
+### Local Execution
+- Runners execute sequentially by default
+- Can be parallelized by orchestrator
+
+### Orchestrated Execution
+- Jobs execute in parallel (configurable concurrency)
+- Default: unlimited parallelism
+- Can limit with `concurrency` option
+
+### Playwright
+- Each runner gets its own browser context
+- Contexts are isolated
+- Browsers are reused when possible
+
+## Security Considerations
+
+1. **Input Validation**: All inputs validated with Zod schemas
+2. **Sandboxing**: Runners execute in isolated contexts
+3. **Timeout Protection**: All runners have timeouts
+4. **Error Isolation**: Runner failures don't crash the system
+5. **Schema Extraction**: Pre-extracted schemas prevent code injection
+
+## Performance Optimizations
+
+1. **Schema Pre-extraction**: Avoids parsing TypeScript at runtime
+2. **Parallel Execution**: Jobs run concurrently
+3. **Browser Reuse**: Playwright contexts reused when possible
+4. **Lazy Loading**: Runners loaded only when needed
+5. **Build-Time Optimization**: SWC plugin removes directives
+
+## Extension Points
+
+The architecture supports extension through:
+
+1. **Custom Runners**: Write any async function with `"use runner"`
+2. **Custom Harnesses**: Implement runner execution logic
+3. **Framework Adapters**: Create adapters for other frameworks
+4. **Custom Orchestrators**: Build your own orchestration logic
+5. **Schema Validators**: Use Standard Schema-compatible validators
+
+## Future Considerations
+
+Potential architectural improvements:
+
+- [ ] Runner caching and memoization
+- [ ] Distributed runner discovery
+- [ ] Streaming results
+- [ ] Custom result aggregators
+- [ ] Plugin system for extensions
+

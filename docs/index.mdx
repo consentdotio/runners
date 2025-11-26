@@ -1,0 +1,84 @@
+---
+title: Docs
+description: Your first document
+---
+
+Welcome to the Runners documentation. This guide will help you understand, use, and contribute to the Runners project.
+
+## Documentation Structure
+
+- **[Architecture](./architecture.mdx)** - System design, components, and how everything fits together
+- **[Getting Started](./getting-started.mdx)** - Quick start guide for new users
+- **[API Reference](./api-reference.mdx)** - Complete API documentation
+- **[Writing Runners](./writing-runners.mdx)** - Guide to creating custom runners
+- **[CLI Usage](./cli.mdx)** - Command-line interface documentation
+- **[Orchestration](./orchestration.mdx)** - Multi-region orchestration guide
+- **[Deployment](./deployment.mdx)** - Production deployment guide
+- **[Advanced Topics](./advanced.mdx)** - Advanced patterns and best practices
+- **[Contributing](./contributing.mdx)** - How to contribute to the project
+
+## Quick Links
+
+- [Installation](#installation)
+- [Core Concepts](#core-concepts)
+- [Examples](#examples)
+
+## Installation
+
+```bash
+npm install runners
+# or
+pnpm add runners
+# or
+yarn add runners
+```
+
+**If you're using Playwright runners**, install Playwright browsers:
+
+```bash
+npx playwright install
+# or
+pnpm exec playwright install
+```
+
+## Core Concepts
+
+### Runner
+
+A **Runner** is a single test or check function that:
+- Receives a `RunnerContext` and optional input
+- Returns a `RunnerResult` with status and details
+- Can use Playwright for browser automation (opt-in)
+
+### Runner Harness
+
+A **Runner Harness** is the execution environment that:
+- Loads runners from your codebase
+- Executes runners with proper context
+- Handles errors and timeouts
+- Returns normalized JSON results
+
+### Orchestrator
+
+An **Orchestrator** coordinates execution across:
+- Multiple regions
+- Multiple URLs
+- Multiple runners
+- Aggregates results from distributed runs
+
+## Examples
+
+Check out the [examples](../examples/) directory for complete working examples:
+
+- **[Basic CLI](../examples/basic-cli/)** - Simple CLI usage
+- **[Hono](../examples/hono/)** - Hono/Nitro integration
+- **[HTTP API](../examples/http-api/)** - Standalone HTTP server
+- **[Orchestrator](../examples/hono-orchestrator/)** - Multi-region orchestration
+
+## Next Steps
+
+1. Read the [Getting Started Guide](./getting-started.mdx) for a quick tutorial
+2. Learn about [Writing Runners](./writing-runners.mdx) to create your own
+3. Explore [API Reference](./api-reference.mdx) for detailed API docs
+4. Check out [Advanced Topics](./advanced.mdx) for production patterns
+

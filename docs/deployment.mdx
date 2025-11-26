@@ -1,0 +1,489 @@
+---
+title: Deployment Guide
+description: Production deployment guide
+lastModified: 2025-11-26
+---
+Guide to deploying Runners in production environments.
+
+## Overview
+
+This guide covers:
+- Deploying runner endpoints
+- Deploying orchestrator services
+- Environment configuration
+- Production best practices
+- Monitoring and observability
+
+## Runner Endpoint Deployment
+
+### Standalone HTTP Server
+
+Deploy a simple HTTP server:
+
+```typescript
+// server.ts
+import { createHttpRunner } from "runners/http";
+import * as runners from "./runners";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION || "us-east-1",
+});
+
+// Export for your deployment platform
+export default handler;
+```
+
+### Vercel
+
+1. Create `api/runner.ts`:
+
+```typescript
+import { createHttpRunner } from "runners/http";
+import * as runners from "../runners";
+
+export default createHttpRunner({
+  runners,
+  region: process.env.VERCEL_REGION || "us-east-1",
+});
+```
+
+2. Deploy:
+
+```bash
+vercel deploy
+```
+
+### AWS Lambda
+
+1. Create handler:
+
+```typescript
+// lambda.ts
+import { createHttpRunner } from "runners/http";
+import * as runners from "./runners";
+
+export const handler = createHttpRunner({
+  runners,
+  region: process.env.AWS_REGION || "us-east-1",
+});
+```
+
+2. Package and deploy:
+
+```bash
+npm run build
+zip -r function.zip dist node_modules
+aws lambda update-function-code --function-name runners --zip-file fileb://function.zip
+```
+
+### Docker
+
+1. Create `Dockerfile`:
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install Playwright browsers
+RUN npx playwright install --with-deps chromium
+
+COPY package*.json ./
+RUN npm ci --production
+
+COPY dist ./dist
+COPY runners ./runners
+
+EXPOSE 3000
+
+CMD ["node", "dist/server.js"]
+```
+
+2. Build and run:
+
+```bash
+docker build -t runners .
+docker run -p 3000:3000 -e RUNNER_REGION=us-east-1 runners
+```
+
+### Kubernetes
+
+1. Create `deployment.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runners
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: runners
+  template:
+    metadata:
+      labels:
+        app: runners
+    spec:
+      containers:
+      - name: runners
+        image: runners:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: RUNNER_REGION
+          value: "us-east-1"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+```
+
+2. Deploy:
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+## Orchestrator Deployment
+
+### Standalone Server
+
+```typescript
+// orchestrator-server.ts
+import { createOrchestratorHandler } from "runners/orchestrator";
+
+export default createOrchestratorHandler();
+```
+
+### Environment Configuration
+
+Set `PLAYWRIGHT_RUNNERS`:
+
+```bash
+export PLAYWRIGHT_RUNNERS='{
+  "us-east-1": "https://runner-us-east-1.example.com/api/runner",
+  "eu-west-1": "https://runner-eu-west-1.example.com/api/runner",
+  "ap-southeast-1": "https://runner-ap-southeast-1.example.com/api/runner"
+}'
+```
+
+### Nitro Integration
+
+```typescript
+// nitro.config.ts
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro-orchestrator"],
+});
+```
+
+## Environment Variables
+
+### Runner Endpoints
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `RUNNER_REGION` | Region identifier | No (defaults to "us-east-1") |
+| `DEBUG` | Enable debug logging | No |
+| `RUNNERS_DEBUG` | Enable runner debug logging | No |
+
+### Orchestrator
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PLAYWRIGHT_RUNNERS` | JSON mapping regions to URLs | Yes (remote mode) |
+| `DEBUG` | Enable debug logging | No |
+| `ORCHESTRATOR_DEBUG` | Enable orchestrator debug logging | No |
+
+## Production Best Practices
+
+### 1. Resource Limits
+
+Set appropriate resource limits:
+
+**Runner Endpoints:**
+- Memory: 512MB - 2GB (depending on Playwright usage)
+- CPU: 250m - 1000m
+- Timeout: 30s - 5m (depending on test complexity)
+
+**Orchestrator:**
+- Memory: 256MB - 512MB
+- CPU: 100m - 500m
+- Timeout: 5m - 30m (depending on run size)
+
+### 2. Scaling
+
+**Horizontal Scaling:**
+- Deploy multiple runner endpoint instances
+- Use load balancer for distribution
+- Each instance handles requests independently
+
+**Vertical Scaling:**
+- Increase memory for Playwright-heavy workloads
+- Increase CPU for parallel execution
+
+### 3. Monitoring
+
+**Key Metrics:**
+- Request rate
+- Response time
+- Error rate
+- Timeout rate
+- Resource utilization
+
+**Example Prometheus Metrics:**
+
+```typescript
+import { createHttpRunner } from "runners/http";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+});
+
+// Add metrics middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    metrics.recordDuration('runner_request', duration);
+    metrics.incrementCounter('runner_requests_total', {
+      status: res.statusCode,
+      runner: req.body?.runners?.[0]?.name || 'unknown'
+    });
+  });
+  next();
+});
+```
+
+### 4. Logging
+
+**Structured Logging:**
+
+```typescript
+import { createHttpRunner } from "runners/http";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+  onLog: (level, message, meta) => {
+    // Send to your logging service
+    logger.log(level, message, meta);
+  },
+});
+```
+
+**Log Levels:**
+- `debug`: Detailed debugging information
+- `info`: General information
+- `warn`: Warnings
+- `error`: Errors
+
+### 5. Error Handling
+
+**Graceful Degradation:**
+
+```typescript
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+  onError: (error, context) => {
+    // Log to error tracking service
+    errorTracker.captureException(error, {
+      extra: context,
+    });
+    
+    // Return user-friendly error
+    return {
+      status: 500,
+      body: {
+        error: "Internal server error",
+        requestId: context.requestId,
+      },
+    };
+  },
+});
+```
+
+### 6. Security
+
+**Input Validation:**
+- All inputs validated with Zod schemas
+- Malformed requests rejected automatically
+
+**Rate Limiting:**
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use('/api/runner', limiter);
+```
+
+**Authentication:**
+
+```typescript
+import { createHttpRunner } from "runners/http";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+  authenticate: async (req) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) throw new Error('Unauthorized');
+    
+    // Verify token
+    const user = await verifyToken(token);
+    return user;
+  },
+});
+```
+
+### 7. Caching
+
+**Schema Caching:**
+- Pre-extracted schemas cached in memory
+- Reduces runtime parsing overhead
+
+**Result Caching (Optional):**
+
+```typescript
+const cache = new Map();
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+  cache: {
+    get: (key) => cache.get(key),
+    set: (key, value, ttl) => {
+      cache.set(key, value);
+      setTimeout(() => cache.delete(key), ttl);
+    },
+  },
+});
+```
+
+## Multi-Region Setup
+
+### 1. Deploy Runner Endpoints
+
+Deploy runner endpoints in each region:
+
+```bash
+# US East
+RUNNER_REGION=us-east-1 vercel deploy --prod
+
+# EU West
+RUNNER_REGION=eu-west-1 vercel deploy --prod
+
+# Asia Pacific
+RUNNER_REGION=ap-southeast-1 vercel deploy --prod
+```
+
+### 2. Configure Orchestrator
+
+Set `PLAYWRIGHT_RUNNERS`:
+
+```bash
+export PLAYWRIGHT_RUNNERS='{
+  "us-east-1": "https://runners-us-east-1.vercel.app/api/runner",
+  "eu-west-1": "https://runners-eu-west-1.vercel.app/api/runner",
+  "ap-southeast-1": "https://runners-ap-southeast-1.vercel.app/api/runner"
+}'
+```
+
+### 3. Deploy Orchestrator
+
+```bash
+vercel deploy --prod
+```
+
+## Health Checks
+
+### Runner Endpoint
+
+```typescript
+// health.ts
+export async function GET() {
+  return Response.json({
+    status: "ok",
+    region: process.env.RUNNER_REGION,
+    timestamp: new Date().toISOString(),
+  });
+}
+```
+
+### Orchestrator
+
+```typescript
+// health.ts
+export async function GET() {
+  const runners = JSON.parse(process.env.PLAYWRIGHT_RUNNERS || '{}');
+  
+  return Response.json({
+    status: "ok",
+    regions: Object.keys(runners),
+    timestamp: new Date().toISOString(),
+  });
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**1. Playwright Executables Not Found**
+
+```bash
+# Install browsers
+npx playwright install --with-deps chromium
+```
+
+**2. Timeout Errors**
+
+Increase timeout in runner configuration:
+
+```typescript
+export default defineConfig({
+  timeout: 60000, // 60 seconds
+});
+```
+
+**3. Memory Issues**
+
+Increase memory limits:
+
+```yaml
+resources:
+  limits:
+    memory: "2Gi"
+```
+
+**4. Network Errors**
+
+Check runner endpoint URLs in `PLAYWRIGHT_RUNNERS`.
+
+**5. Schema Loading Errors**
+
+Ensure schema extraction runs during build:
+
+```bash
+npm run build
+```
+
+## See Also
+
+- [Architecture](./architecture.mdx) - System architecture
+- [Orchestration](./orchestration.mdx) - Multi-region orchestration
+- [API Reference](./api-reference.mdx) - Complete API documentation
+

@@ -1,0 +1,474 @@
+---
+title: Orchestration
+description: Multi-region orchestration guide
+lastModified: 2025-11-26
+---
+Guide to running tests across multiple regions using the orchestrator.
+
+## Overview
+
+The orchestrator allows you to:
+- Run the same tests across multiple regions
+- Execute tests in parallel
+- Aggregate results from distributed runs
+- Coordinate execution across multiple runner endpoints
+
+## Architecture
+
+```
+Client
+  ↓
+Orchestrator (single request)
+  ↓
+fanoutJobs() - Groups runners by URL/region
+  ↓
+Jobs Created (one per URL-region combination)
+  ↓
+Parallel Execution
+  ├─→ Remote Runner (us-east-1)
+  ├─→ Remote Runner (eu-west-1)
+  └─→ Remote Runner (ap-southeast-1)
+  ↓
+Results Aggregated
+  ↓
+Single Run Summary
+```
+
+## Setup
+
+### 1. Install Package
+
+```bash
+pnpm add runners
+```
+
+### 2. Configure Runner Endpoints
+
+Set the `PLAYWRIGHT_RUNNERS` environment variable:
+
+```bash
+export PLAYWRIGHT_RUNNERS='{
+  "us-east-1": "https://runner-us-east-1.example.com/api/runner",
+  "eu-west-1": "https://runner-eu-west-1.example.com/api/runner",
+  "ap-southeast-1": "https://runner-ap-southeast-1.example.com/api/runner"
+}'
+```
+
+### 3. Create Orchestrator Handler
+
+```typescript
+// server.ts
+import { createOrchestratorHandler } from "runners/orchestrator";
+
+export default createOrchestratorHandler();
+```
+
+### 4. Deploy Runner Endpoints
+
+Deploy runner endpoints in each region:
+
+```typescript
+// runner-server.ts (deploy to each region)
+import { createHttpRunner } from "runners/http";
+import * as runners from "./runners";
+
+export default createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION, // e.g., "us-east-1"
+});
+```
+
+## Usage
+
+### Submit a Run Request
+
+```bash
+curl -X POST http://orchestrator.example.com/api/orchestrator \
+  -H "Content-Type: application/json" \
+  -d '{
+    "runners": [
+      {
+        "name": "cookieBannerTest",
+        "region": "us-east-1",
+        "input": {
+          "url": "https://example.com"
+        }
+      },
+      {
+        "name": "cookieBannerTest",
+        "region": "eu-west-1",
+        "input": {
+          "url": "https://example.com"
+        }
+      }
+    ],
+    "mode": "remote"
+  }'
+```
+
+Response:
+```json
+{
+  "runId": "run_abc123"
+}
+```
+
+### Check Run Status
+
+```bash
+curl http://orchestrator.example.com/api/orchestrator/run_abc123/status
+```
+
+Response:
+```json
+{
+  "runId": "run_abc123",
+  "state": "running",
+  "totalJobs": 2,
+  "completedJobs": 1,
+  "failedJobs": 0,
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:01:00Z"
+}
+```
+
+### Get Run Results
+
+```bash
+curl http://orchestrator.example.com/api/orchestrator/run_abc123
+```
+
+Response:
+```json
+{
+  "runId": "run_abc123",
+  "state": "completed",
+  "jobs": [
+    {
+      "jobId": "job_123",
+      "region": "us-east-1",
+      "state": "completed",
+      "results": [
+        {
+          "name": "cookieBannerTest",
+          "status": "pass",
+          "durationMs": 1234
+        }
+      ],
+      "startedAt": "2024-01-01T00:00:00Z",
+      "completedAt": "2024-01-01T00:01:00Z",
+      "durationMs": 60000
+    },
+    {
+      "jobId": "job_456",
+      "region": "eu-west-1",
+      "state": "completed",
+      "results": [
+        {
+          "name": "cookieBannerTest",
+          "status": "pass",
+          "durationMs": 1456
+        }
+      ],
+      "startedAt": "2024-01-01T00:00:00Z",
+      "completedAt": "2024-01-01T00:01:00Z",
+      "durationMs": 62000
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "errored": 0
+  },
+  "createdAt": "2024-01-01T00:00:00Z",
+  "completedAt": "2024-01-01T00:01:00Z",
+  "durationMs": 62000
+}
+```
+
+## Run Modes
+
+### Remote Mode
+
+Execute runners on remote endpoints:
+
+```json
+{
+  "runners": [
+    {
+      "name": "cookieBannerTest",
+      "region": "us-east-1",
+      "input": { "url": "https://example.com" }
+    }
+  ],
+  "mode": "remote"
+}
+```
+
+**Requirements:**
+- Each runner must specify a `region`
+- `PLAYWRIGHT_RUNNERS` must be configured
+- Runner endpoints must be accessible
+
+### Local Mode
+
+Execute runners locally (for testing):
+
+```json
+{
+  "runners": [
+    {
+      "name": "cookieBannerTest",
+      "input": { "url": "https://example.com" }
+    }
+  ],
+  "mode": "local"
+}
+```
+
+**Requirements:**
+- Runners must be available locally
+- Each runner must specify a `url` in input
+
+## Concurrency Control
+
+Control how many jobs run in parallel:
+
+```json
+{
+  "runners": [ /* ... */ ],
+  "mode": "remote",
+  "concurrency": 3
+}
+```
+
+- **Default**: Unlimited (all jobs run in parallel)
+- **Limited**: Set `concurrency` to limit parallel jobs
+- **Sequential**: Set `concurrency: 1` to run one at a time
+
+## Timeouts
+
+Set timeout for entire run:
+
+```json
+{
+  "runners": [ /* ... */ ],
+  "mode": "remote",
+  "timeout": 60000
+}
+```
+
+- Timeout applies to entire run (all jobs)
+- Individual job timeouts are handled by runner endpoints
+- Run status becomes `"timed_out"` if timeout exceeded
+
+## Run States
+
+### queued
+
+Run has been submitted but not started.
+
+### running
+
+Run is in progress (one or more jobs executing).
+
+### completed
+
+All jobs completed successfully.
+
+### failed
+
+One or more jobs failed.
+
+### timed_out
+
+Run exceeded timeout.
+
+## Job Grouping
+
+The orchestrator groups runners into jobs:
+
+1. **By URL**: Runners with the same URL are grouped
+2. **By Region**: In remote mode, runners are grouped by region
+3. **One Job Per URL-Region**: Each unique URL-region combination gets one job
+
+**Example:**
+
+```json
+{
+  "runners": [
+    { "name": "test1", "region": "us-east-1", "input": { "url": "https://example.com" } },
+    { "name": "test2", "region": "us-east-1", "input": { "url": "https://example.com" } },
+    { "name": "test1", "region": "eu-west-1", "input": { "url": "https://example.com" } }
+  ],
+  "mode": "remote"
+}
+```
+
+Creates 2 jobs:
+- Job 1: `us-east-1` → runs `test1` and `test2`
+- Job 2: `eu-west-1` → runs `test1`
+
+## Error Handling
+
+### Job Failures
+
+If a job fails:
+- Job status becomes `"failed"`
+- Other jobs continue executing
+- Run status becomes `"failed"` if any job fails
+
+### Runner Errors
+
+If a runner errors:
+- Runner result has `status: "error"`
+- Job continues with other runners
+- Job status becomes `"failed"` if all runners error
+
+### Network Errors
+
+If a remote runner endpoint is unreachable:
+- Job status becomes `"failed"`
+- Error message includes connection details
+- Other jobs continue executing
+
+## Best Practices
+
+### 1. Use Consistent URLs
+
+Group runners by URL to minimize job count:
+
+```json
+{
+  "runners": [
+    { "name": "test1", "region": "us-east-1", "input": { "url": "https://example.com" } },
+    { "name": "test2", "region": "us-east-1", "input": { "url": "https://example.com" } }
+  ]
+}
+```
+
+### 2. Set Appropriate Timeouts
+
+```json
+{
+  "timeout": 300000  // 5 minutes for slow tests
+}
+```
+
+### 3. Monitor Run Status
+
+Poll status endpoint for long-running runs:
+
+```typescript
+async function waitForCompletion(runId: string) {
+  while (true) {
+    const status = await getRunStatus(runId);
+    if (status.state === "completed" || status.state === "failed") {
+      return status;
+    }
+    await sleep(5000); // Poll every 5 seconds
+  }
+}
+```
+
+### 4. Handle Failures Gracefully
+
+```typescript
+const summary = await getRunResults(runId);
+
+if (summary.state === "failed") {
+  const failedJobs = summary.jobs.filter(job => job.state === "failed");
+  console.error(`Failed jobs: ${failedJobs.length}`);
+  
+  for (const job of failedJobs) {
+    console.error(`Region ${job.region}: ${job.error}`);
+  }
+}
+```
+
+### 5. Use Tags for Organization
+
+```json
+{
+  "runners": [ /* ... */ ],
+  "tags": ["smoke", "regression"]
+}
+```
+
+Tags are included in run metadata for filtering and organization.
+
+## Nitro Integration
+
+Use the Nitro orchestrator module:
+
+```typescript
+// nitro.config.ts
+import { defineConfig } from "nitro/config";
+
+export default defineConfig({
+  modules: ["runners/nitro-orchestrator"],
+});
+```
+
+Automatically exposes orchestrator endpoints at `/api/orchestrator/*`.
+
+## Example: Multi-Region Testing
+
+Test a website across multiple regions:
+
+```typescript
+const runRequest = {
+  runners: [
+    // US East
+    {
+      name: "cookieBannerTest",
+      region: "us-east-1",
+      input: { url: "https://example.com" }
+    },
+    {
+      name: "exampleTitleTest",
+      region: "us-east-1",
+      input: { url: "https://example.com" }
+    },
+    // EU West
+    {
+      name: "cookieBannerTest",
+      region: "eu-west-1",
+      input: { url: "https://example.com" }
+    },
+    {
+      name: "exampleTitleTest",
+      region: "eu-west-1",
+      input: { url: "https://example.com" }
+    },
+    // Asia Pacific
+    {
+      name: "cookieBannerTest",
+      region: "ap-southeast-1",
+      input: { url: "https://example.com" }
+    },
+    {
+      name: "exampleTitleTest",
+      region: "ap-southeast-1",
+      input: { url: "https://example.com" }
+    }
+  ],
+  mode: "remote",
+  concurrency: 3  // Run 3 regions in parallel
+};
+
+const { runId } = await submitRun(runRequest);
+const summary = await waitForCompletion(runId);
+
+console.log(`Total: ${summary.summary.total}`);
+console.log(`Passed: ${summary.summary.passed}`);
+console.log(`Failed: ${summary.summary.failed}`);
+```
+
+## See Also
+
+- [API Reference](./api-reference.mdx) - Complete API documentation
+- [Deployment](./deployment.mdx) - Production deployment guide
+- [Architecture](./architecture.mdx) - System architecture
+

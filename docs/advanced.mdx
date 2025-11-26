@@ -1,0 +1,408 @@
+---
+title: Advanced Topics
+description: Advanced patterns and best practices
+lastModified: 2025-11-26
+---
+
+## Custom Schema Validators
+
+Runners support Standard Schema-compatible validators, not just Zod:
+
+```typescript
+import { StandardSchemaV1 } from "@standard-schema/spec";
+import type { Runner } from "runners";
+
+// Using a custom validator
+const CustomInputSchema: StandardSchemaV1<string, string> = {
+  "~standard": {
+    validate: (value) => {
+      if (typeof value !== "string") {
+        return { issues: [{ message: "Must be string" }] };
+      }
+      return { value };
+    },
+  },
+};
+
+export const customRunner: Runner<typeof CustomInputSchema> = async (
+  ctx,
+  input
+) => {
+  "use runner";
+  // input is typed as string
+  return { name: "custom", status: "pass" };
+};
+```
+
+## Custom Runner Harnesses
+
+Create custom execution environments:
+
+```typescript
+import { runRunners } from "runners";
+import type { Runner, RunnerContext } from "runners";
+
+class CustomHarness {
+  async execute(
+    runners: Runner[],
+    context: RunnerContext
+  ) {
+    // Custom execution logic
+    const results = [];
+    
+    for (const runner of runners) {
+      try {
+        const result = await runner(context, {});
+        results.push(result);
+      } catch (error) {
+        results.push({
+          name: "error",
+          status: "error" as const,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    
+    return { results };
+  }
+}
+```
+
+## Performance Optimization
+
+### 1. Schema Pre-extraction
+
+Schemas are extracted at build time for performance:
+
+```bash
+# Build extracts schemas automatically
+npm run build
+```
+
+### 2. Parallel Execution
+
+Use orchestrator for parallel execution:
+
+```typescript
+const runRequest = {
+  runners: [/* ... */],
+  mode: "remote",
+  concurrency: 10, // Run 10 jobs in parallel
+};
+```
+
+### 3. Browser Reuse
+
+Playwright contexts are reused when possible:
+
+```typescript
+// Multiple runners can share browser context
+const { page } = await withPlaywright(ctx, url);
+// Browser is reused for subsequent runners
+```
+
+### 4. Lazy Loading
+
+Runners are loaded only when needed:
+
+```typescript
+// Runners loaded on-demand
+const runner = await import(`./runners/${runnerName}`);
+```
+
+## Custom Result Aggregation
+
+Create custom aggregators for orchestrator:
+
+```typescript
+import { aggregateResults } from "runners/orchestrator";
+
+function customAggregator(
+  runId: string,
+  jobs: Job[],
+  jobResults: JobResult[]
+) {
+  // Custom aggregation logic
+  const aggregated = {
+    runId,
+    customMetric: jobResults.reduce((sum, job) => {
+      return sum + (job.durationMs || 0);
+    }, 0),
+    // ... custom fields
+  };
+  
+  return aggregated;
+}
+```
+
+## Error Recovery
+
+Implement retry logic:
+
+```typescript
+async function runWithRetry(
+  runner: Runner,
+  context: RunnerContext,
+  input: unknown,
+  maxRetries = 3
+) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await runner(context, input);
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff
+      await new Promise(resolve =>
+        setTimeout(resolve, Math.pow(2, attempt) * 1000)
+      );
+    }
+  }
+}
+```
+
+## Custom Logging
+
+Implement custom logging:
+
+```typescript
+import { createHttpRunner } from "runners/http";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+  logger: {
+    debug: (message, meta) => {
+      console.debug(`[DEBUG] ${message}`, meta);
+    },
+    info: (message, meta) => {
+      console.info(`[INFO] ${message}`, meta);
+    },
+    warn: (message, meta) => {
+      console.warn(`[WARN] ${message}`, meta);
+    },
+    error: (message, meta) => {
+      console.error(`[ERROR] ${message}`, meta);
+    },
+  },
+});
+```
+
+## Testing Runners
+
+### Unit Testing
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { cookieBannerTest } from "./runners";
+
+describe("cookieBannerTest", () => {
+  it("should pass when banner is visible", async () => {
+    const context = {
+      log: () => {},
+      region: "us-east-1",
+    };
+    
+    const result = await cookieBannerTest(context, {
+      url: "https://example.com",
+    });
+    
+    expect(result.status).toBe("pass");
+  });
+});
+```
+
+### Integration Testing
+
+```typescript
+import { runRunners } from "runners";
+import { cookieBannerTest } from "./runners";
+
+describe("Runner Integration", () => {
+  it("should execute runners", async () => {
+    const result = await runRunners({
+      runners: [cookieBannerTest],
+      region: "us-east-1",
+    });
+    
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].status).toBe("pass");
+  });
+});
+```
+
+## Custom Directives
+
+Extend directive system (advanced):
+
+```typescript
+// Custom directive parser
+function parseDirectives(source: string) {
+  const directives = [];
+  const directiveRegex = /"use (\w+)"/g;
+  
+  let match;
+  while ((match = directiveRegex.exec(source)) !== null) {
+    directives.push(match[1]);
+  }
+  
+  return directives;
+}
+```
+
+## Plugin System
+
+Create plugins for extensibility:
+
+```typescript
+interface RunnerPlugin {
+  name: string;
+  beforeRun?: (context: RunnerContext) => Promise<void>;
+  afterRun?: (result: RunnerResult) => Promise<void>;
+}
+
+class MetricsPlugin implements RunnerPlugin {
+  name = "metrics";
+  
+  async beforeRun(context: RunnerContext) {
+    metrics.startTimer("runner_execution");
+  }
+  
+  async afterRun(result: RunnerResult) {
+    metrics.recordDuration("runner_execution", result.durationMs);
+    metrics.incrementCounter("runner_results", {
+      status: result.status,
+    });
+  }
+}
+```
+
+## Custom Build Integration
+
+Integrate with custom build systems:
+
+```typescript
+// custom-build.ts
+import { extractSchemas } from "@runners/schema-extractor";
+
+async function build() {
+  // Extract schemas
+  await extractSchemas({
+    input: "src/**/*.ts",
+    output: "dist/schemas.json",
+  });
+  
+  // Build code
+  await buildCode();
+  
+  // Bundle
+  await bundle();
+}
+```
+
+## Type-Safe Configuration
+
+Create type-safe config helpers:
+
+```typescript
+import { z } from "zod";
+
+const RunnerConfigSchema = z.object({
+  url: z.string().url(),
+  timeout: z.number().positive(),
+  runners: z.array(z.string()),
+});
+
+type RunnerConfig = z.infer<typeof RunnerConfigSchema>;
+
+function createConfig(config: RunnerConfig) {
+  return RunnerConfigSchema.parse(config);
+}
+```
+
+## Advanced Playwright Usage
+
+### Custom Browser Options
+
+```typescript
+import { withPlaywright } from "runners/playwright";
+
+export const customBrowserRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  const { browser } = await withPlaywright(ctx, input.url);
+  
+  // Access browser directly
+  const context = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+    userAgent: "Custom User Agent",
+  });
+  
+  const page = await context.newPage();
+  // ... use custom page
+};
+```
+
+### Multiple Pages
+
+```typescript
+export const multiPageRunner: Runner = async (ctx, input) => {
+  "use runner";
+  
+  const { browser } = await withPlaywright(ctx, input.url);
+  
+  const pages = await Promise.all([
+    browser.newPage(),
+    browser.newPage(),
+    browser.newPage(),
+  ]);
+  
+  // Use multiple pages
+  await Promise.all(pages.map(page => page.goto(input.url)));
+  
+  // ... rest of logic
+};
+```
+
+## Stream Results
+
+Stream results for long-running runs:
+
+```typescript
+import { createHttpRunner } from "runners/http";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+  streamResults: true, // Stream results as they complete
+});
+```
+
+## Custom Middleware
+
+Add custom middleware:
+
+```typescript
+import { createHttpRunner } from "runners/http";
+
+const handler = createHttpRunner({
+  runners,
+  region: process.env.RUNNER_REGION,
+  middleware: [
+    (req, res, next) => {
+      // Custom middleware
+      req.customField = "value";
+      next();
+    },
+  ],
+});
+```
+
+## See Also
+
+- [Writing Runners](./writing-runners.mdx) - Runner authoring guide
+- [Architecture](./architecture.mdx) - System architecture
+- [API Reference](./api-reference.mdx) - Complete API documentation
+
