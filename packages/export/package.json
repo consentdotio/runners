@@ -1,6 +1,6 @@
 {
   "name": "runners",
-  "version": "0.0.0",
+  "version": "1.0.2",
   "description": "A small SDK for writing Playwright tests that can be executed by an API orchestrator or a local CLI",
   "license": "MIT",
   "type": "module",
