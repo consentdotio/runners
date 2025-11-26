@@ -20,14 +20,12 @@ type CreateCommentResponse = Awaited<
 >;
 
 function autoStart(header: string): string {
-  const key =
-    (header || "runner-docs-preview").trim() || "runner-docs-preview";
+  const key = (header || "runner-docs-preview").trim() || "runner-docs-preview";
   return `<!-- c15t:${key}:START -->`;
 }
 
 function autoEnd(header: string): string {
-  const key =
-    (header || "runner-docs-preview").trim() || "runner-docs-preview";
+  const key = (header || "runner-docs-preview").trim() || "runner-docs-preview";
   return `<!-- c15t:${key}:END -->`;
 }
 
