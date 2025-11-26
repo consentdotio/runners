@@ -73,6 +73,18 @@ pnpm add runners
 yarn add runners
 ```
 
+**If you're using Playwright runners**, install Playwright browsers:
+
+```bash
+npx playwright install
+# or
+pnpm exec playwright install
+# or
+yarn playwright install
+```
+
+This only needs to be done once per machine. If you see an error about Playwright executables not existing, run this command.
+
 ---
 
 ## Core concepts
