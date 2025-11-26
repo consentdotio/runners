@@ -1,14 +1,17 @@
 import { implement } from "@orpc/server";
 import {
-  runRunners,
+  type RunRunnersRequestSchema,
+  runnerContract,
+} from "@runners/contracts";
+import {
   getRunnerInfo,
   type Runner,
   type RunnerContext,
   type RunnerResult,
+  runRunners,
 } from "@runners/core";
-import { runnerContract } from "@runners/contracts";
+import type { z } from "zod";
 import type { CreateHttpRunnerOptions } from "./types";
-import type { RunnerSchemaInfo } from "./schema-discovery";
 
 /**
  * Create oRPC router implementing the runner contract
@@ -20,8 +23,18 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
   // to attach handlers. After attaching handlers, we use .router() to create the router.
   const pub = implement(runnerContract);
 
+  // Extract handler parameter types from oRPC
+  type HandlerFn = NonNullable<Parameters<typeof pub.execute.handler>[0]>;
+  type HandlerParams = Parameters<HandlerFn>[0];
+
   const executeRunners = pub.execute.handler(
-    async ({ input, errors }: { input: any; errors: any }) => {
+    async ({
+      input,
+      errors,
+    }: {
+      input: z.infer<typeof RunRunnersRequestSchema>;
+      errors: HandlerParams["errors"];
+    }) => {
       console.log(
         "[runner/orpc] Received input:",
         JSON.stringify(input, null, 2)
@@ -188,16 +201,16 @@ export function createRunnerRouter(options: CreateHttpRunnerOptions) {
     }
   );
 
-  const infoHandler = pub.info.handler(() => {
-    return getRunnerInfo(runners, {
+  const infoHandler = pub.info.handler(() =>
+    getRunnerInfo(runners, {
       region,
       usageExample: {
         method: "POST",
         endpoint: "/api/runner/execute",
         exampleUrl: "https://example.com",
       },
-    });
-  });
+    })
+  );
 
   // Use .router() to create the router structure matching the contract
   // This ensures the router structure matches what OpenAPIHandler expects

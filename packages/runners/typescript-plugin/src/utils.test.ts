@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import ts from 'typescript/lib/tsserverlibrary';
-import { getDirective, isAsyncFunction } from './utils';
-import { createTestProgram } from './test-helpers';
+import ts from "typescript/lib/tsserverlibrary";
+import { describe, expect, it } from "vitest";
+import { createTestProgram } from "./test-helpers";
+import { getDirective, isAsyncFunction } from "./utils";
 
-describe('getDirective', () => {
+describe("getDirective", () => {
   it('returns "use runner" for runner functions', () => {
     const source = `
       function myRunner() {
@@ -12,7 +12,7 @@ describe('getDirective', () => {
       }
     `;
 
-    const { program, sourceFile } = createTestProgram(source);
+    const { sourceFile } = createTestProgram(source);
 
     let result: string | null = null;
     ts.forEachChild(sourceFile, (node) => {
@@ -21,17 +21,17 @@ describe('getDirective', () => {
       }
     });
 
-    expect(result).toBe('use runner');
+    expect(result).toBe("use runner");
   });
 
-  it('returns null for functions without directives', () => {
+  it("returns null for functions without directives", () => {
     const source = `
       function normalFunction() {
         return 123;
       }
     `;
 
-    const { program, sourceFile } = createTestProgram(source);
+    const { sourceFile } = createTestProgram(source);
 
     let result: string | null = null;
     ts.forEachChild(sourceFile, (node) => {
@@ -43,7 +43,7 @@ describe('getDirective', () => {
     expect(result).toBeNull();
   });
 
-  it('returns null for functions with other string literals', () => {
+  it("returns null for functions with other string literals", () => {
     const source = `
       function myFunction() {
         'use strict';
@@ -51,7 +51,7 @@ describe('getDirective', () => {
       }
     `;
 
-    const { program, sourceFile } = createTestProgram(source);
+    const { sourceFile } = createTestProgram(source);
 
     let result: string | null = null;
     ts.forEachChild(sourceFile, (node) => {
@@ -63,15 +63,14 @@ describe('getDirective', () => {
     expect(result).toBeNull();
   });
 
-  it('handles arrow functions', () => {
+  it("handles arrow functions", () => {
     const source = `
       const myRunner = () => {
         'use runner';
         return 123;
       };
     `;
-
-    const { program, sourceFile } = createTestProgram(source);
+    const { sourceFile } = createTestProgram(source);
 
     let result: string | null = null;
     function visit(node: ts.Node) {
@@ -82,10 +81,10 @@ describe('getDirective', () => {
     }
     ts.forEachChild(sourceFile, visit);
 
-    expect(result).toBe('use runner');
+    expect(result).toBe("use runner");
   });
 
-  it('handles double quotes', () => {
+  it("handles double quotes", () => {
     const source = `
       function myRunner() {
         "use runner";
@@ -93,7 +92,7 @@ describe('getDirective', () => {
       }
     `;
 
-    const { program, sourceFile } = createTestProgram(source);
+    const { sourceFile } = createTestProgram(source);
 
     let result: string | null = null;
     ts.forEachChild(sourceFile, (node) => {
@@ -102,12 +101,12 @@ describe('getDirective', () => {
       }
     });
 
-    expect(result).toBe('use runner');
+    expect(result).toBe("use runner");
   });
 });
 
-describe('isAsyncFunction', () => {
-  it('returns true for async functions', () => {
+describe("isAsyncFunction", () => {
+  it("returns true for async functions", () => {
     const source = `
       async function myFunction() {
         return 123;
@@ -127,7 +126,7 @@ describe('isAsyncFunction', () => {
     expect(result).toBe(true);
   });
 
-  it('returns true for functions returning Promise', () => {
+  it("returns true for functions returning Promise", () => {
     const source = `
       function myFunction(): Promise<number> {
         return Promise.resolve(123);
@@ -147,7 +146,7 @@ describe('isAsyncFunction', () => {
     expect(result).toBe(true);
   });
 
-  it('returns false for non-async functions without Promise', () => {
+  it("returns false for non-async functions without Promise", () => {
     const source = `
       function myFunction() {
         return 123;
@@ -167,7 +166,7 @@ describe('isAsyncFunction', () => {
     expect(result).toBe(false);
   });
 
-  it('handles async arrow functions', () => {
+  it("handles async arrow functions", () => {
     const source = `
       const myFunction = async () => {
         return 123;
@@ -189,4 +188,3 @@ describe('isAsyncFunction', () => {
     expect(result).toBe(true);
   });
 });
-

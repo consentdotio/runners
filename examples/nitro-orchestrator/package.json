@@ -9,7 +9,7 @@
     "build": "nitro build",
     "start": "node .output/server/index.mjs",
     "fmt": "pnpm biome format --write .",
-    "lint": "pnpm biome lint ./src"
+    "lint": "pnpm biome lint ."
   },
   "dependencies": {
     "runners": "workspace:*"

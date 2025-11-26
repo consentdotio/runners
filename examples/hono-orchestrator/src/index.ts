@@ -17,16 +17,7 @@ app.get("/health", (c) =>
 
 // Mount orchestrator API handler on all routes (including /docs, /api/docs, /api/*)
 app.all("*", async (c) => {
-  const request = new Request(c.req.url, {
-    method: c.req.method,
-    headers: c.req.header(),
-    body:
-      c.req.method !== "GET" && c.req.method !== "HEAD"
-        ? await c.req.text()
-        : undefined,
-  });
-
-  const response = await orchestratorHandler(request);
+  const response = await orchestratorHandler(c.req.raw);
 
   // If handler returns a response, use it; otherwise return 404
   if (response) {

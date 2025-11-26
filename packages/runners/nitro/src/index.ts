@@ -1,18 +1,30 @@
-import type { Nitro, NitroModule } from "nitro/types";
-import { join } from "pathe";
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { Nitro, NitroModule } from "nitro/types";
+import { join } from "pathe";
 import { LocalBuilder } from "./builders";
-import type { ModuleOptions } from "./types";
+import type { ModuleOptions, NitroOptionsWithRunners } from "./types";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export type { ModuleOptions } from "./types";
 
+/**
+ * Type-safe helper to extract runners options from Nitro config.
+ * This works around TypeScript's limitation with type alias merging in module augmentation.
+ */
+function getRunnersOptions(nitro: Nitro): ModuleOptions {
+  const options = nitro.options as Nitro["options"] & NitroOptionsWithRunners;
+  return options.runners || {};
+}
+
 export default {
   name: "runners/nitro",
-  // biome-ignore lint/suspicious/useAwait: nitro.options is not typed
-  async setup(nitro: Nitro) {
-    const options =
-      (nitro.options as unknown as { runners?: ModuleOptions }).runners || {};
+  setup(nitro: Nitro) {
+    const options = getRunnersOptions(nitro);
     // Default patterns: scan both src/** and runners/**
     let patterns: string[];
     if (options.pattern) {
@@ -43,7 +55,7 @@ export default {
     // Build runners bundle on build:before hook
     nitro.hooks.hook("build:before", async () => {
       // Extract schema metadata using Rust tool
-      await extractSchemaMetadata(
+      extractSchemaMetadata(
         patterns,
         schemaMetadataPath,
         nitro.options.rootDir
@@ -67,13 +79,10 @@ export default {
     }
 
     // Create virtual handler that imports the bundled runners
-    addVirtualHandler(
-      nitro,
-      "/api/runner",
-      "runners/handler",
+    addVirtualHandler(nitro, "/api/runner", "runners/handler", {
       region,
-      schemaMetadataPath
-    );
+      schemaMetadataPath,
+    });
 
     // Add handlers for /api/runner and its sub-paths (docs, spec.json)
     nitro.options.handlers.push(
@@ -89,15 +98,15 @@ export default {
   },
 } satisfies NitroModule;
 
-async function extractSchemaMetadata(
+function extractSchemaMetadata(
   patterns: string[],
   outputPath: string,
   cwd: string
-): Promise<void> {
+): void {
   try {
     // Try to find schema-extractor binary
-    // First check if it's in node_modules
-    const possiblePaths = [
+    // Check both Unix and Windows paths (.exe extension)
+    const basePaths = [
       join(
         process.cwd(),
         "node_modules/@runners/schema-extractor/target/release/schema-extractor"
@@ -110,9 +119,16 @@ async function extractSchemaMetadata(
     ];
 
     let extractorPath: string | undefined;
-    for (const path of possiblePaths) {
-      if (existsSync(path)) {
-        extractorPath = path;
+    for (const basePath of basePaths) {
+      // Check Unix path
+      if (existsSync(basePath)) {
+        extractorPath = basePath;
+        break;
+      }
+      // Check Windows path
+      const windowsPath = `${basePath}.exe`;
+      if (existsSync(windowsPath)) {
+        extractorPath = windowsPath;
         break;
       }
     }
@@ -142,31 +158,19 @@ function addVirtualHandler(
   nitro: Nitro,
   _route: string,
   virtualKey: string,
-  region?: string,
-  schemaMetadataPath?: string
+  options: {
+    region?: string;
+    schemaMetadataPath?: string;
+  } = {}
 ) {
+  const { region, schemaMetadataPath } = options;
   // The actual runners bundle is at runners/runners.mjs
   const runnersBundlePath = join(nitro.options.buildDir, "runners/runners.mjs");
   const schemaMetadataImport = schemaMetadataPath
     ? `process.env.RUNNER_SCHEMAS_METADATA = ${JSON.stringify(schemaMetadataPath)};`
     : "";
 
-  if (!nitro.routing) {
-    // Nitro v2 (legacy)
-    nitro.options.virtual[`#${virtualKey}`] = /* js */ `
-    import { fromWebHandler } from "h3";
-    import { createOrpcRunnerHandler } from 'runners/http';
-    import { runners } from "${runnersBundlePath}";
-    ${schemaMetadataImport}
-    
-    const handler = await createOrpcRunnerHandler({
-      runners,
-      region: ${region ? JSON.stringify(region) : "undefined"},
-    });
-    
-    export default fromWebHandler(handler);
-  `;
-  } else {
+  if (nitro.routing) {
     // Nitro v3+ (native web handlers)
     nitro.options.virtual[`#${virtualKey}`] = /* js */ `
     import { createOrpcRunnerHandler } from 'runners/http';
@@ -195,6 +199,21 @@ function addVirtualHandler(
         );
       }
     };
+  `;
+  } else {
+    // Nitro v2 (legacy)
+    nitro.options.virtual[`#${virtualKey}`] = /* js */ `
+    import { fromWebHandler } from "h3";
+    import { createOrpcRunnerHandler } from 'runners/http';
+    import { runners } from "${runnersBundlePath}";
+    ${schemaMetadataImport}
+    
+    const handler = await createOrpcRunnerHandler({
+      runners,
+      region: ${region ? JSON.stringify(region) : "undefined"},
+    });
+    
+    export default fromWebHandler(handler);
   `;
   }
 }

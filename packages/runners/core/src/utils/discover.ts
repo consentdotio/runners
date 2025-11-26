@@ -1,9 +1,9 @@
-import { glob } from "glob";
 import { pathToFileURL } from "node:url";
 import { RunnerDiscoveryError } from "@runners/errors";
+import { glob } from "glob";
 import type { Runner } from "../types";
-import { hasAnyDirective } from "./directive-detector";
 import { normalizePath } from "./debug";
+import { hasAnyDirective } from "./directive-detector";
 
 /**
  * Caches discovered runners by pattern and requireDirective.
@@ -21,8 +21,8 @@ const discoveredRunnersCache = new WeakMap<string[], Map<string, Runner>>();
  * @returns Map of runner name to runner function
  */
 export async function discoverRunners(
-  pattern: string = "src/**/*.ts",
-  requireDirective: boolean = true
+  pattern = "src/**/*.ts",
+  requireDirective = true
 ): Promise<Map<string, Runner>> {
   const discoverStart = Date.now();
   const cacheKey = [pattern, String(requireDirective)];
@@ -57,12 +57,12 @@ export async function discoverRunners(
 
       // Discover async function exports as runners
       for (const [exportName, exportValue] of Object.entries(module)) {
-        // Check if the export is a function (basic check)
-        if (typeof exportValue === "function") {
-          // Accept any async function export as a Runner
-          if (exportValue.constructor.name === "AsyncFunction") {
-            runners.set(exportName, exportValue as Runner);
-          }
+        // Check if the export is an async function
+        if (
+          typeof exportValue === "function" &&
+          exportValue.constructor.name === "AsyncFunction"
+        ) {
+          runners.set(exportName, exportValue as Runner);
         }
       }
     } catch (error) {

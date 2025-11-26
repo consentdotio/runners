@@ -1,19 +1,19 @@
-import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIGenerator } from "@orpc/openapi";
+import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { onError } from "@orpc/server";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
-import { createRunnerRouter } from "./orpc";
-import type { CreateHttpRunnerOptions } from "./types";
-import { enhanceRunnerOpenAPISpec } from "./openapi-enhancer";
-import { discoverRunnerSchemas } from "./schema-discovery";
-import { loadBuildTimeSchemas } from "./schema-loader";
 import {
-  runnerContract,
-  RunRunnersRequestSchema,
-  RunRunnersResponseSchema,
   RunnerConfigRequestSchema,
   RunnerResultSchema,
+  RunRunnersRequestSchema,
+  RunRunnersResponseSchema,
+  runnerContract,
 } from "@runners/contracts";
+import { enhanceRunnerOpenAPISpec } from "./openapi-enhancer";
+import { createRunnerRouter } from "./orpc";
+import { discoverRunnerSchemas } from "./schema-discovery";
+import { loadBuildTimeSchemas } from "./schema-loader";
+import type { CreateHttpRunnerOptions } from "./types";
 
 /**
  * Create oRPC handler for runner API with Scalar/Swagger UI
@@ -36,11 +36,12 @@ export async function createOrpcRunnerHandler(
           `[runners/http] Loaded ${schemas.size} schemas from build-time metadata`
         );
       }
-    } catch {
+    } catch (e) {
       // Fallback to runtime discovery
       if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
         console.log(
-          "[runners/http] Build-time schema metadata not found, using runtime discovery"
+          "[runners/http] Build-time schema metadata not found, using runtime discovery:",
+          e
         );
       }
     }
@@ -127,7 +128,9 @@ export async function createOrpcRunnerHandler(
     const url = new URL(req.url);
 
     // Debug: log all requests
-    console.log(`[runner/http] ${req.method} ${url.pathname}`);
+    if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
+      console.log(`[runner/http] ${req.method} ${url.pathname}`);
+    }
 
     // Serve OpenAPI spec - check FIRST before API handler
     // Use contract directly (not router) to ensure correct paths are used

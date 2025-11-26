@@ -12,7 +12,7 @@ import { dirname } from "node:path";
 export async function writeDebugFile(
   outfile: string,
   debugData: object,
-  merge: boolean = false
+  merge = false
 ): Promise<void> {
   try {
     const debugFilePath = `${outfile}.debug.json`;
@@ -60,6 +60,8 @@ export function normalizePath(path: string): string {
   return path.replace(/\\/g, "/");
 }
 
+const TRAILING_SLASH_REGEX = /\/$/;
+
 /**
  * Calculates relative path from working directory to file, handling Windows edge cases.
  *
@@ -69,42 +71,45 @@ export function normalizePath(path: string): string {
  */
 export function getRelativePath(workingDir: string, filePath: string): string {
   // Normalize paths to forward slashes
-  const normalizedWorkingDir = normalizePath(workingDir).replace(/\/$/, "");
+  const normalizedWorkingDir = normalizePath(workingDir).replace(
+    TRAILING_SLASH_REGEX,
+    ""
+  );
   const normalizedPath = normalizePath(filePath);
 
   // Windows fix: Use case-insensitive comparison to work around drive letter casing issues
   const lowerWd = normalizedWorkingDir.toLowerCase();
   const lowerPath = normalizedPath.toLowerCase();
 
-  if (lowerPath.startsWith(lowerWd + "/")) {
+  if (lowerPath.startsWith(`${lowerWd}/`)) {
     // File is under working directory - manually calculate relative path
     return normalizedPath.substring(normalizedWorkingDir.length + 1);
-  } else if (lowerPath === lowerWd) {
+  }
+  if (lowerPath === lowerWd) {
     // File IS the working directory
     return ".";
-  } else {
-    // Use relative() for files outside working directory
-    const { relative } = require("node:path");
-    let relativePath = normalizePath(relative(workingDir, filePath));
-
-    // Handle files discovered outside the working directory
-    if (relativePath.startsWith("../")) {
-      relativePath = relativePath
-        .split("/")
-        .filter((part) => part !== "..")
-        .join("/");
-    }
-
-    // Final safety check - ensure we never return an absolute path
-    if (relativePath.includes(":") || relativePath.startsWith("/")) {
-      // This should never happen, but if it does, use just the filename as last resort
-      // eslint-disable-next-line no-console
-      console.error(
-        `[runners] WARNING: relativePath is still absolute: ${relativePath}`
-      );
-      return normalizedPath.split("/").pop() || "unknown.ts";
-    }
-
-    return relativePath;
   }
+  // Use relative() for files outside working directory
+  const { relative } = require("node:path");
+  let relativePath = normalizePath(relative(workingDir, filePath));
+
+  // Handle files discovered outside the working directory
+  if (relativePath.startsWith("../")) {
+    relativePath = relativePath
+      .split("/")
+      .filter((part) => part !== "..")
+      .join("/");
+  }
+
+  // Final safety check - ensure we never return an absolute path
+  if (relativePath.includes(":") || relativePath.startsWith("/")) {
+    // This should never happen, but if it does, use just the filename as last resort
+    // eslint-disable-next-line no-console
+    console.error(
+      `[runners] WARNING: relativePath is still absolute: ${relativePath}`
+    );
+    return normalizedPath.split("/").pop() || "unknown.ts";
+  }
+
+  return relativePath;
 }

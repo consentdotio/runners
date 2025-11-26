@@ -1,8 +1,8 @@
-type TypeScriptLib = typeof import('typescript/lib/tsserverlibrary');
+type TypeScriptLib = typeof import("typescript/lib/tsserverlibrary");
 type FunctionLikeDeclaration =
-  import('typescript/lib/tsserverlibrary').FunctionLikeDeclaration;
-type SourceFile = import('typescript/lib/tsserverlibrary').SourceFile;
-type TypeChecker = import('typescript/lib/tsserverlibrary').TypeChecker;
+  import("typescript/lib/tsserverlibrary").FunctionLikeDeclaration;
+type SourceFile = import("typescript/lib/tsserverlibrary").SourceFile;
+type TypeChecker = import("typescript/lib/tsserverlibrary").TypeChecker;
 
 /**
  * Helper to compare characters and advance indices
@@ -27,8 +27,8 @@ function advanceIndices(
  * Uses edit distance algorithm - allows up to 1 difference
  */
 export function detectSimilarStrings(a: string, b: string): boolean {
-  const aChars = a.split('');
-  const bChars = b.split('');
+  const aChars = a.split("");
+  const bChars = b.split("");
 
   if (Math.abs(aChars.length - bChars.length) > 1) {
     return false;
@@ -61,13 +61,13 @@ export function getDirective(
   node: FunctionLikeDeclaration,
   _sourceFile: SourceFile,
   ts: TypeScriptLib
-): 'use runner' | null {
-  if (!node.body || !ts.isBlock(node.body)) {
+): "use runner" | null {
+  if (!(node.body && ts.isBlock(node.body))) {
     return null;
   }
 
   const firstStatement = node.body.statements[0];
-  if (!firstStatement || !ts.isExpressionStatement(firstStatement)) {
+  if (!(firstStatement && ts.isExpressionStatement(firstStatement))) {
     return null;
   }
 
@@ -77,7 +77,7 @@ export function getDirective(
   }
 
   const text = expression.text;
-  if (text === 'use runner') {
+  if (text === "use runner") {
     return text;
   }
 
@@ -88,9 +88,9 @@ export function getDirective(
  * Checks if a string literal is a misspelled directive
  * Returns the expected directive if it's a typo, null otherwise
  */
-export function getDirectiveTypo(text: string): 'use runner' | null {
-  if (detectSimilarStrings(text, 'use runner')) {
-    return 'use runner';
+export function getDirectiveTypo(text: string): "use runner" | null {
+  if (detectSimilarStrings(text, "use runner")) {
+    return "use runner";
   }
   return null;
 }
@@ -118,7 +118,7 @@ export function isAsyncFunction(
     if (signature) {
       const returnType = typeChecker.getReturnTypeOfSignature(signature);
       const typeString = typeChecker.typeToString(returnType);
-      return typeString.startsWith('Promise<');
+      return typeString.startsWith("Promise<");
     }
   } catch {
     // If type checking fails, assume it's not async
@@ -127,4 +127,3 @@ export function isAsyncFunction(
 
   return false;
 }
-

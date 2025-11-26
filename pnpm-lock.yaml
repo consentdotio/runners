@@ -98,9 +98,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/export
     devDependencies:
-      '@oxc-transform/binding-darwin-arm64':
-        specifier: ^0.98.0
-        version: 0.98.0
       '@runners/tsconfig':
         specifier: workspace:*
         version: link:../../packages/shared/tsconfig

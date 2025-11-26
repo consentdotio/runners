@@ -1,8 +1,8 @@
-import type { Program, QuickInfo } from 'typescript/lib/tsserverlibrary';
-import { getDirective } from './utils';
+import type { Program, QuickInfo } from "typescript/lib/tsserverlibrary";
+import { getDirective } from "./utils";
 
-type TypeScriptLib = typeof import('typescript/lib/tsserverlibrary');
-type StringLiteral = import('typescript/lib/tsserverlibrary').StringLiteral;
+type TypeScriptLib = typeof import("typescript/lib/tsserverlibrary");
+type StringLiteral = import("typescript/lib/tsserverlibrary").StringLiteral;
 
 export function getHoverInfo(
   fileName: string,
@@ -18,7 +18,7 @@ export function getHoverInfo(
   // Find the node at the hover position
   let directiveNode: StringLiteral | null = null;
 
-  function visit(currentNode: import('typescript/lib/tsserverlibrary').Node) {
+  function visit(currentNode: import("typescript/lib/tsserverlibrary").Node) {
     if (
       ts.isStringLiteral(currentNode) &&
       position >= currentNode.getStart(sourceFile) &&
@@ -41,7 +41,7 @@ export function getHoverInfo(
   const text = node.text;
 
   // Check if this is a directive
-  if (text !== 'use runner') {
+  if (text !== "use runner") {
     return;
   }
 
@@ -87,21 +87,21 @@ export function getHoverInfo(
 
   return {
     kind: ts.ScriptElementKind.constElement,
-    kindModifiers: '',
+    kindModifiers: "",
     textSpan: {
       start: node.getStart(sourceFile),
       length: node.getWidth(sourceFile),
     },
     displayParts: [
       {
-        text: 'Runners SDK - Runner Function',
-        kind: 'text',
+        text: "Runners SDK - Runner Function",
+        kind: "text",
       },
     ],
     documentation: [
       {
         text: 'The `"use runner"` directive marks this function as a runner that will be discovered and executed by the Runners SDK. Runner functions must be async and receive a `RunnerContext` parameter.\n\nFor Playwright functionality, use `withPlaywright(ctx, url)` from `runners/playwright` to get an enhanced context with `page` and `url`.',
-        kind: 'text',
+        kind: "text",
       },
     ],
   };

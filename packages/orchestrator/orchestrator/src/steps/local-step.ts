@@ -1,11 +1,11 @@
 import {
-  runRunners,
   type Runner,
   type RunnerContext,
   type RunnerResult,
+  runRunners,
 } from "@runners/core";
-import type { Job, JobResult } from "../types";
 import { discoverAvailableRunners, getRunnersByName } from "../runners";
+import type { Job, JobResult } from "../types";
 import { normalizeJobResult } from "../utils";
 
 /**
@@ -49,25 +49,20 @@ export async function runLocalStep(job: Job): Promise<JobResult> {
     const completedAt = new Date();
 
     // Normalize the result
-    return normalizeJobResult(
-      job,
-      result.results,
-      "completed",
-      undefined,
+    return normalizeJobResult(job, result.results, {
+      state: "completed",
       startedAt,
-      completedAt
-    );
+      completedAt,
+    });
   } catch (error) {
     const completedAt = new Date();
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    return normalizeJobResult(
-      job,
-      [],
-      "failed",
-      errorMessage,
+    return normalizeJobResult(job, [], {
+      state: "failed",
+      error: errorMessage,
       startedAt,
-      completedAt
-    );
+      completedAt,
+    });
   }
 }

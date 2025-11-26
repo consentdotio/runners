@@ -1,12 +1,50 @@
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import type { ContractRouterClient } from "@orpc/contract";
-import { runnerContract } from "@runners/contracts";
+import type { runnerContract } from "@runners/contracts";
 import type { Job, JobResult } from "../types";
 import {
   getRunnerUrl as getRunnerEndpointUrl,
   normalizeJobResult,
 } from "../utils";
+
+/**
+ * Check if an error is a timeout error using robust detection
+ */
+function isTimeoutError(error: unknown): boolean {
+  if (error instanceof Error) {
+    // Check error name
+    if (error.name === "TimeoutError" || error.name === "AbortError") {
+      return true;
+    }
+
+    // Check error code (Node.js standard timeout codes)
+    if (
+      "code" in error &&
+      (error.code === "ETIMEDOUT" ||
+        error.code === "ECONNABORTED" ||
+        error.code === "TIMEOUT")
+    ) {
+      return true;
+    }
+  }
+
+  // Check for timeout in error object code property
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error.code === "ETIMEDOUT" ||
+      error.code === "ECONNABORTED" ||
+      error.code === "TIMEOUT")
+  ) {
+    return true;
+  }
+
+  // Fallback: check error message (case-insensitive)
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return errorMessage.toLowerCase().includes("timeout");
+}
 
 /**
  * Execute a remote job step (calls runner via oRPC)
@@ -18,10 +56,6 @@ export async function runRemoteStep(
   job: Job & { region: string }
 ): Promise<JobResult> {
   const startedAt = new Date();
-
-  if (!job.region) {
-    throw new Error("Region is required for remote mode");
-  }
 
   try {
     // Get runner URL for this region
@@ -69,10 +103,13 @@ export async function runRemoteStep(
       region: job.region,
     };
 
-    console.log(
-      "[orchestrator/remote-step] Calling runner with payload:",
-      JSON.stringify(requestPayload, null, 2)
-    );
+    // Log payload only in debug mode to avoid leaking sensitive data
+    if (process.env.DEBUG || process.env.ORCHESTRATOR_DEBUG) {
+      console.log(
+        "[orchestrator/remote-step] Calling runner with payload:",
+        JSON.stringify(requestPayload, null, 2)
+      );
+    }
 
     // Call the runner using the contract with per-runner configs
     const result = await client.execute(requestPayload);
@@ -80,31 +117,25 @@ export async function runRemoteStep(
     const completedAt = new Date();
 
     // Normalize the result
-    return normalizeJobResult(
-      job,
-      result.results || [],
-      "completed",
-      undefined,
+    return normalizeJobResult(job, result.results || [], {
+      state: "completed",
       startedAt,
-      completedAt
-    );
+      completedAt,
+    });
   } catch (error) {
     const completedAt = new Date();
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    // Determine if it's a timeout or other error
-    const state: JobResult["state"] =
-      errorMessage.includes("timeout") || errorMessage.includes("Timeout")
-        ? "timed_out"
-        : "failed";
+    // Determine if it's a timeout or other error using robust detection
+    const state: JobResult["state"] = isTimeoutError(error)
+      ? "timed_out"
+      : "failed";
 
-    return normalizeJobResult(
-      job,
-      [],
+    return normalizeJobResult(job, [], {
       state,
-      errorMessage,
+      error: errorMessage,
       startedAt,
-      completedAt
-    );
+      completedAt,
+    });
   }
 }

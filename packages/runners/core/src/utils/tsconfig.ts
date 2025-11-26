@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { findUp } from "find-up";
 import { parse } from "comment-json";
+import { findUp } from "find-up";
 
 /**
  * Extracts TypeScript path mappings and baseUrl from tsconfig.json/jsconfig.json.

@@ -1,3 +1,5 @@
+// Re-export config
+export { defineConfig, type RunnersConfig } from "@runners/config";
 export { runRunners } from "./runner";
 export {
   type Runner,
@@ -9,28 +11,31 @@ export {
   type StandardSchemaV1,
   validateStandardSchema,
 } from "./types";
-
-// Re-export config
-export { defineConfig, type RunnersConfig } from "@runners/config";
-
-// Export runner discovery utilities
-export { discoverRunners, clearDiscoveryCache } from "./utils/discover";
 export {
-  hasModuleDirective,
-  hasModuleDirectiveSync,
+  getRelativePath,
+  normalizePath,
+  writeDebugFile,
+} from "./utils/debug";
+export {
   hasAnyDirective,
   hasAnyDirectiveSync,
-  useRunnerPattern,
+  hasModuleDirective,
+  hasModuleDirectiveSync,
   useRunnerFunctionPattern,
+  useRunnerPattern,
 } from "./utils/directive-detector";
-export {
-  writeDebugFile,
-  normalizePath,
-  getRelativePath,
-} from "./utils/debug";
-export { getTsConfigOptions } from "./utils/tsconfig";
+// Export runner discovery utilities
+export { clearDiscoveryCache, discoverRunners } from "./utils/discover";
 export {
   getRunnerInfo,
   type RunnerInfo,
   type RunnerInfoOptions,
 } from "./utils/runner-info";
+export {
+  discoverRunnerSchemas,
+  getAllRunnerSchemaInfo,
+  getRunnerSchemaInfo,
+  type RunnerSchemaInfo,
+  type SchemaDiscoveryOptions,
+} from "./utils/schema-discovery";
+export { getTsConfigOptions } from "./utils/tsconfig";

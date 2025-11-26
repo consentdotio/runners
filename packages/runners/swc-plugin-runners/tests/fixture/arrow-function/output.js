@@ -1,4 +1,1 @@
-export const myRunner = async (ctx) => {
-  return { name: "test", status: "pass" };
-};
-
+export const myRunner = async (_ctx) => ({ name: "test", status: "pass" });

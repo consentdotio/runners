@@ -9,8 +9,7 @@ import { jsTsRegex, parentHasChild } from "./discover-plugin";
 const PATH_SEPARATOR_REGEX = /\\/g;
 const TRAILING_SLASH_REGEX = /\/$/;
 const ABSOLUTE_PATH_REGEX = /^\/|:/;
-const LOCAL_IMPORT_REGEX = /^\./;
-const ABSOLUTE_IMPORT_REGEX = /^\//;
+const ALL_FILES_REGEX = /.*/;
 
 export type SwcPluginOptions = {
   tsPaths?: Record<string, string[]>;
@@ -76,7 +75,7 @@ export function createSwcPlugin(options: SwcPluginOptions = {}): Plugin {
 
       // Externalization logic: only bundle files with directives and their dependencies
       if (options.entriesToBundle) {
-        build.onResolve({ filter: /.*/ }, async (args) => {
+        build.onResolve({ filter: ALL_FILES_REGEX }, async (args) => {
           try {
             let resolvedPath: string | false | undefined = args.path;
 
@@ -93,7 +92,9 @@ export function createSwcPlugin(options: SwcPluginOptions = {}): Plugin {
               );
             }
 
-            if (!resolvedPath) return null;
+            if (!resolvedPath) {
+              return null;
+            }
 
             // Normalize to forward slashes for cross-platform comparison
             const normalizedResolvedPath = resolvedPath.replace(
@@ -172,7 +173,7 @@ export function createSwcPlugin(options: SwcPluginOptions = {}): Plugin {
           const lowerPath = normalizedPath.toLowerCase();
 
           let relativeFilepath: string;
-          if (lowerPath.startsWith(lowerWd + "/")) {
+          if (lowerPath.startsWith(`${lowerWd}/`)) {
             // File is under working directory - manually calculate relative path
             // This ensures we get a relative path even with drive letter casing issues
             relativeFilepath = normalizedPath.substring(

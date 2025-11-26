@@ -1,8 +1,8 @@
 import type { OpenAPI } from "@orpc/openapi";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import type { Runner } from "@runners/core";
-import type { CreateHttpRunnerOptions } from "./types";
 import type { RunnerSchemaInfo } from "./schema-discovery";
+import type { CreateHttpRunnerOptions } from "./types";
 
 /**
  * Extracts runner metadata from the runners map
@@ -22,7 +22,6 @@ function getRunnerMetadata(
  * Returns undefined if no schema is available.
  */
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: needs to be complex
 function generateExampleFromSchema(
   schemaInfo: RunnerSchemaInfo | undefined
 ): Record<string, unknown> | undefined {
@@ -70,8 +69,6 @@ function generateExampleFromSchema(
 /**
  * Enhances OpenAPI spec with runner-specific information
  */
-
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: needs to be complex
 export function enhanceRunnerOpenAPISpec(
   spec: OpenAPI.Document,
   options: CreateHttpRunnerOptions

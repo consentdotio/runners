@@ -3,7 +3,7 @@ import { discoverRunners } from "@runners/core";
 
 export async function loadRunners(
   runnerNames?: string[],
-  requireDirective: boolean = true
+  requireDirective = true
 ): Promise<Runner[]> {
   const allRunners = await discoverRunners(undefined, requireDirective);
 

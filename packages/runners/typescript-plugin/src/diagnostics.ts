@@ -1,15 +1,11 @@
-import {
-  getDirective,
-  getDirectiveTypo,
-  isAsyncFunction,
-} from './utils';
+import { getDirective, getDirectiveTypo, isAsyncFunction } from "./utils";
 
-type TypeScriptLib = typeof import('typescript/lib/tsserverlibrary');
-type Program = import('typescript/lib/tsserverlibrary').Program;
-type Diagnostic = import('typescript/lib/tsserverlibrary').Diagnostic;
-type Node = import('typescript/lib/tsserverlibrary').Node;
+type TypeScriptLib = typeof import("typescript/lib/tsserverlibrary");
+type Program = import("typescript/lib/tsserverlibrary").Program;
+type Diagnostic = import("typescript/lib/tsserverlibrary").Diagnostic;
+type Node = import("typescript/lib/tsserverlibrary").Node;
 type FunctionLikeDeclaration =
-  import('typescript/lib/tsserverlibrary').FunctionLikeDeclaration;
+  import("typescript/lib/tsserverlibrary").FunctionLikeDeclaration;
 
 export function getCustomDiagnostics(
   fileName: string,
@@ -45,10 +41,12 @@ export function getCustomDiagnostics(
 
     const parent = node.parent;
     if (
-      !parent ||
-      !ts.isExpressionStatement(parent) ||
-      !parent.parent ||
-      !ts.isBlock(parent.parent)
+      !(
+        parent &&
+        ts.isExpressionStatement(parent) &&
+        parent.parent &&
+        ts.isBlock(parent.parent)
+      )
     ) {
       return;
     }
@@ -79,16 +77,15 @@ export function getCustomDiagnostics(
 
     // Check function declarations for runner directives
     if (
-      ts.isFunctionDeclaration(node) ||
-      ts.isArrowFunction(node) ||
-      ts.isFunctionExpression(node)
+      (ts.isFunctionDeclaration(node) ||
+        ts.isArrowFunction(node) ||
+        ts.isFunctionExpression(node)) &&
+      sourceFile
     ) {
-      if (sourceFile) {
-        const directive = getDirective(node, sourceFile, ts);
+      const directive = getDirective(node, sourceFile, ts);
 
-        if (directive === 'use runner') {
-          checkRunnerFunction(node);
-        }
+      if (directive === "use runner") {
+        checkRunnerFunction(node);
       }
     }
 
@@ -104,7 +101,7 @@ export function getCustomDiagnostics(
         file: sourceFile,
         start,
         length,
-        messageText: 'Runner functions must be async or return a Promise',
+        messageText: "Runner functions must be async or return a Promise",
         category: ts.DiagnosticCategory.Error,
         code: 9001,
       });
@@ -114,4 +111,3 @@ export function getCustomDiagnostics(
   visit(sourceFile);
   return diagnostics;
 }
-

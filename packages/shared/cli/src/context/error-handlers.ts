@@ -36,9 +36,9 @@ export function createErrorHandlers(context: CliContext) {
      */
     handleCancel: (
       message = "Operation cancelled.",
-      context?: { command?: string; stage?: string }
+      _context?: { command?: string; stage?: string }
     ): never => {
-      logger.debug(`Handling cancellation: ${message}`, context);
+      logger.debug(`Handling cancellation: ${message}`, _context);
 
       logger.failed(message);
       process.exit(0);

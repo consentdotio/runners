@@ -54,6 +54,8 @@ export const globalFlags: CliFlag[] = [
   },
 ];
 
+const DOUBLE_DASH_REGEX = /^--/;
+const SINGLE_DASH_REGEX = /^-/;
 /**
  * Parses raw command line arguments into structured flags, command name, and command args.
  *
@@ -71,7 +73,9 @@ export function parseCliArgs(
 
   // Initialize flags
   for (const flag of globalFlags) {
-    const primaryName = flag.names[0]?.replace(/^--/, "").replace(/^-/, "");
+    const primaryName = flag.names[0]
+      ?.replace(DOUBLE_DASH_REGEX, "")
+      .replace(SINGLE_DASH_REGEX, "");
     if (primaryName) {
       parsedFlags[primaryName] = flag.type === "boolean" ? false : undefined;
     }
@@ -85,36 +89,37 @@ export function parseCliArgs(
     }
 
     // Check if this is a flag
-    if (arg.startsWith("--") || arg.startsWith("-")) {
-      const flagName = arg.replace(/^--?/, "");
+    if (DOUBLE_DASH_REGEX.test(arg) || SINGLE_DASH_REGEX.test(arg)) {
+      const flagName = arg
+        .replace(DOUBLE_DASH_REGEX, "")
+        .replace(SINGLE_DASH_REGEX, "");
       const flag = globalFlags.find((f) =>
-        f.names.some((name) => name.replace(/^--?/, "") === flagName)
+        f.names.some((name) => name.replace(DOUBLE_DASH_REGEX, "") === flagName)
       );
 
       if (flag) {
-        const primaryName = flag.names[0]?.replace(/^--/, "").replace(/^-/, "");
+        const primaryName = flag.names[0]
+          ?.replace(DOUBLE_DASH_REGEX, "")
+          .replace(SINGLE_DASH_REGEX, "");
         if (primaryName) {
           if (flag.expectsValue && i + 1 < rawArgs.length) {
             parsedFlags[primaryName] = rawArgs[i + 1];
-            i++; // Skip the next argument as it's the value
+            i += 1; // Skip the next argument as it's the value
           } else if (flag.type === "boolean") {
             parsedFlags[primaryName] = true;
           }
         }
       }
+    } else if (commandName) {
+      // We already have a command, this is an arg
+      commandArgs.push(arg);
     } else {
-      // This might be a command name or command arg
-      if (!commandName) {
-        // Check if it's a known command
-        const isCommand = commands.some((cmd) => cmd.name === arg);
-        if (isCommand) {
-          commandName = arg;
-        } else {
-          // Not a command, treat as arg (will be ignored if no command found)
-          commandArgs.push(arg);
-        }
+      // Check if it's a known command
+      const isCommand = commands.some((cmd) => cmd.name === arg);
+      if (isCommand) {
+        commandName = arg;
       } else {
-        // We already have a command, this is an arg
+        // Not a command, treat as arg (will be ignored if no command found)
         commandArgs.push(arg);
       }
     }

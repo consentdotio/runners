@@ -1,113 +1,63 @@
-import { glob } from "glob";
-import { pathToFileURL } from "node:url";
-import type { z } from "zod";
-import type { Runner } from "@runners/core";
-import { hasAnyDirective } from "@runners/core";
+import {
+  discoverRunnerSchemas as discoverRunnerSchemasCore,
+  getAllRunnerSchemaInfo as getAllRunnerSchemaInfoCore,
+  getRunnerSchemaInfo as getRunnerSchemaInfoCore,
+  type RunnerSchemaInfo,
+  type SchemaDiscoveryOptions,
+} from "@runners/core";
+
+// Re-export types for convenience
+export type { RunnerSchemaInfo, SchemaDiscoveryOptions };
 
 /**
- * Runner schema metadata extracted from runner files
+ * Orchestrator-specific schema discovery options
  */
-export type RunnerSchemaInfo = {
-  name: string;
-  schema?: z.ZodTypeAny;
-  description?: string;
+const orchestratorDiscoveryOptions: SchemaDiscoveryOptions = {
+  ignore: ["node_modules/**", "dist/**"],
+  logPrefix: "[orchestrator]",
 };
 
 /**
  * Discovers runner input schemas from runner files.
- * Looks for exported schemas following the convention: `{runnerName}InputSchema` or `{runnerName}Schema`
+ * Wrapper around the shared implementation with orchestrator-specific defaults.
  *
  * @param pattern - Glob pattern to match runner files
  * @returns Map of runner name to schema info
  */
-export async function discoverRunnerSchemas(
-  pattern: string = "runners/**/*.ts"
+export function discoverRunnerSchemas(
+  pattern: string | string[] = "runners/**/*.ts"
 ): Promise<Map<string, RunnerSchemaInfo>> {
-  const runnerFiles = await glob(pattern, {
-    ignore: ["node_modules/**", "dist/**"],
-  });
-
-  const schemas = new Map<string, RunnerSchemaInfo>();
-
-  for (const file of runnerFiles) {
-    try {
-      // Check for directive
-      const hasDirective = await hasAnyDirective(file);
-      if (!hasDirective) {
-        continue;
-      }
-
-      // Import the module
-      const moduleUrl = pathToFileURL(file).href;
-      const module = await import(moduleUrl);
-
-      // Look for runner exports and their corresponding schemas
-      for (const [exportName, exportValue] of Object.entries(module)) {
-        // Check if it's a runner function
-        if (
-          typeof exportValue === "function" &&
-          exportValue.constructor.name === "AsyncFunction"
-        ) {
-          // Try to find corresponding schema exports
-          // Convention: {runnerName}InputSchema, {runnerName}Schema, or InputSchema
-          const schemaName = exportName.endsWith("Schema")
-            ? exportName
-            : `${exportName}InputSchema`;
-
-          const schemaExport =
-            module[schemaName] ||
-            module[`${exportName}Schema`] ||
-            module.InputSchema;
-
-          if (
-            schemaExport &&
-            typeof schemaExport === "object" &&
-            "_def" in schemaExport
-          ) {
-            // It's a Zod schema
-            schemas.set(exportName, {
-              name: exportName,
-              schema: schemaExport as z.ZodTypeAny,
-            });
-          } else {
-            // No schema found, but we still record the runner
-            schemas.set(exportName, {
-              name: exportName,
-            });
-          }
-        }
-      }
-    } catch (error) {
-      // Log but continue
-      if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
-        console.warn(
-          `[orchestrator] Failed to discover schemas from ${file}:`,
-          error
-        );
-      }
-    }
-  }
-
-  return schemas;
+  const patterns = Array.isArray(pattern) ? pattern : [pattern];
+  return discoverRunnerSchemasCore(patterns, orchestratorDiscoveryOptions);
 }
 
 /**
  * Gets runner schema info for a specific runner name
  */
-export async function getRunnerSchemaInfo(
+export function getRunnerSchemaInfo(
   runnerName: string,
-  pattern?: string
+  pattern?: string | string[]
 ): Promise<RunnerSchemaInfo | undefined> {
-  const schemas = await discoverRunnerSchemas(pattern);
-  return schemas.get(runnerName);
+  let patterns: string[] | undefined;
+  if (pattern) {
+    patterns = Array.isArray(pattern) ? pattern : [pattern];
+  }
+  return getRunnerSchemaInfoCore(
+    runnerName,
+    patterns,
+    orchestratorDiscoveryOptions
+  );
 }
 
 /**
  * Gets all discovered runner schema info
  */
-export async function getAllRunnerSchemaInfo(
-  pattern?: string
+export function getAllRunnerSchemaInfo(
+  pattern?: string | string[]
 ): Promise<RunnerSchemaInfo[]> {
-  const schemas = await discoverRunnerSchemas(pattern);
-  return Array.from(schemas.values());
+  let patterns: string[] | undefined;
+  if (pattern) {
+    patterns = Array.isArray(pattern) ? pattern : [pattern];
+  }
+  return getAllRunnerSchemaInfoCore(patterns, orchestratorDiscoveryOptions);
 }

@@ -1,6 +1,6 @@
-import { z } from "zod";
 import type { Runner } from "runners";
 import { withPlaywright } from "runners/playwright";
+import { z } from "zod";
 
 // Define schemas
 export const CookieBannerInputSchema = z.object({

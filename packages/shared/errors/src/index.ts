@@ -1,14 +1,12 @@
 // Base error class
-export { RunnerError, isError } from "./base";
-
-// Runtime errors
-export { RunnerTimeoutError, RunnerExecutionError } from "./runtime";
+export { isError, RunnerError } from "./base";
+// Configuration error
+export { RunnerConfigError } from "./config";
 
 // Discovery errors
-export { RunnerDiscoveryError, NoRunnersFoundError } from "./discovery";
+export { NoRunnersFoundError, RunnerDiscoveryError } from "./discovery";
 
 // Not found error
 export { RunnerNotFoundError } from "./not-found";
-
-// Configuration error
-export { RunnerConfigError } from "./config";
+// Runtime errors
+export { RunnerExecutionError, RunnerTimeoutError } from "./runtime";

@@ -8,10 +8,10 @@ export const SUPPORTED_PACKAGE_MANAGERS: PackageManager[] = [
   "pnpm",
   "bun",
 ];
-export interface PackageManagerResult {
+export type PackageManagerResult = {
   name: PackageManager;
   version: string | null;
-}
+};
 
 /**
  * Gets the version of a package manager

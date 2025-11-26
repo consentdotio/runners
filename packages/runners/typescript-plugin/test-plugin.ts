@@ -1,16 +1,17 @@
 #!/usr/bin/env node
+
 /**
  * Test script to verify the TypeScript plugin is working
  * This simulates what an IDE would do when loading the plugin
  */
 
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 // biome-ignore lint/performance/noNamespaceImport: TypeScript API requires namespace import for test file
-import * as ts from 'typescript';
-import { join } from 'node:path';
-import { existsSync } from 'node:fs';
+import * as ts from "typescript";
 
 // Load the plugin
-const pluginPath = join(__dirname, 'dist', 'index.js');
+const pluginPath = join(__dirname, "dist", "index.js");
 if (!existsSync(pluginPath)) {
   console.error(`❌ Plugin not found at ${pluginPath}`);
   console.error('   Run "pnpm build" first');
@@ -32,7 +33,7 @@ export const badRunner = (ctx) => {
 };
 `;
 
-const testFileName = 'test-runner.ts';
+const testFileName = "test-runner.ts";
 
 // Create a TypeScript program
 const compilerOptions: ts.CompilerOptions = {
@@ -43,13 +44,12 @@ const compilerOptions: ts.CompilerOptions = {
   skipLibCheck: true,
 };
 
-
 // Initialize the plugin
 const pluginInit = plugin.init({ typescript: ts });
 const languageServiceHost: ts.LanguageServiceHost = {
   getCompilationSettings: () => compilerOptions,
   getScriptFileNames: () => [testFileName],
-  getScriptVersion: () => '1',
+  getScriptVersion: () => "1",
   getScriptSnapshot: (fileName) => {
     if (fileName === testFileName) {
       return ts.ScriptSnapshot.fromString(testFile);
@@ -86,18 +86,19 @@ const pluginCreateInfo: ts.server.PluginCreateInfo = {
 const enhancedLanguageService = pluginInit.create(pluginCreateInfo);
 
 // Get diagnostics
-console.log('\n🔍 Checking for plugin diagnostics...\n');
-const diagnostics = enhancedLanguageService.getSemanticDiagnostics(testFileName);
+console.log("\n🔍 Checking for plugin diagnostics...\n");
+const diagnostics =
+  enhancedLanguageService.getSemanticDiagnostics(testFileName);
 
 if (diagnostics.length === 0) {
-  console.log('❌ No diagnostics found. Plugin may not be working.');
+  console.log("❌ No diagnostics found. Plugin may not be working.");
   process.exit(1);
 }
 
 console.log(`✅ Found ${diagnostics.length} diagnostic(s):\n`);
 
 for (const diagnostic of diagnostics) {
-  const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+  const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
   const file = diagnostic.file;
   if (file) {
     const { line, character } = file.getLineAndCharacterOfPosition(
@@ -115,15 +116,14 @@ for (const diagnostic of diagnostics) {
 const hasTypoError = diagnostics.some((d) => d.code === 9008);
 const hasAsyncError = diagnostics.some((d) => d.code === 9001);
 
-console.log('\n📊 Results:');
-console.log(`  Typo detection (9008): ${hasTypoError ? '✅' : '❌'}`);
-console.log(`  Async validation (9001): ${hasAsyncError ? '✅' : '❌'}`);
+console.log("\n📊 Results:");
+console.log(`  Typo detection (9008): ${hasTypoError ? "✅" : "❌"}`);
+console.log(`  Async validation (9001): ${hasAsyncError ? "✅" : "❌"}`);
 
 if (hasTypoError && hasAsyncError) {
-  console.log('\n✅ Plugin is working correctly!');
+  console.log("\n✅ Plugin is working correctly!");
   process.exit(0);
 } else {
-  console.log('\n❌ Plugin may not be working as expected');
+  console.log("\n❌ Plugin may not be working as expected");
   process.exit(1);
 }
-

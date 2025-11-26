@@ -1,10 +1,10 @@
+/** biome-ignore-all lint/suspicious/useAwait: false positive */
 "use runner";
 
-export async function runner1(ctx) {
+export async function runner1(_ctx) {
   return { name: "test1", status: "pass" };
 }
 
-export async function runner2(ctx) {
+export async function runner2(_ctx) {
   return { name: "test2", status: "pass" };
 }
-

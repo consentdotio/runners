@@ -25,11 +25,23 @@ export const RunRequestSchema = z.object({
 });
 
 /**
+ * Shared enum for run/job state values
+ * Used across RunStatusSchema, RunSummarySchema, and JobResultSchema
+ */
+export const RunStateEnum = z.enum([
+  "queued",
+  "running",
+  "completed",
+  "failed",
+  "timed_out",
+]);
+
+/**
  * Zod schema for RunStatus validation
  */
 export const RunStatusSchema = z.object({
   runId: z.string(),
-  state: z.enum(["queued", "running", "completed", "failed", "timed_out"]),
+  state: RunStateEnum,
   totalJobs: z.number().int().nonnegative(),
   completedJobs: z.number().int().nonnegative(),
   failedJobs: z.number().int().nonnegative(),
@@ -54,7 +66,7 @@ const RunnerResultSchema = z.object({
 const JobResultSchema = z.object({
   jobId: z.string(),
   region: z.string().optional(),
-  state: z.enum(["queued", "running", "completed", "failed", "timed_out"]),
+  state: RunStateEnum,
   results: z.array(RunnerResultSchema),
   error: z.string().optional(),
   startedAt: z.coerce.date().optional(),
@@ -67,7 +79,7 @@ const JobResultSchema = z.object({
  */
 export const RunSummarySchema = z.object({
   runId: z.string(),
-  state: z.enum(["queued", "running", "completed", "failed", "timed_out"]),
+  state: RunStateEnum,
   jobs: z.array(JobResultSchema),
   summary: z.object({
     total: z.number().int().nonnegative(),
@@ -140,7 +152,7 @@ export const getRunResults = base
  * Orchestrator contract router
  */
 export const orchestratorContract = {
-  submit: submitRun,
-  getStatus: getRunStatus,
-  getResults: getRunResults,
+  submitRun,
+  getRunStatus,
+  getRunResults,
 };

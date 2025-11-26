@@ -1,29 +1,52 @@
+import { randomUUID } from "node:crypto";
 import type {
   Job,
   JobResult,
+  RunnerConfig,
   RunRequest,
   RunSummary,
-  RunnerConfig,
 } from "./types";
 
 /**
- * Generate a unique run ID (workflow-safe, no Node.js dependencies)
+ * Generate a unique run ID
+ * Uses crypto.randomUUID() for collision resistance with fallback for compatibility
  */
 export function generateRunId(): string {
-  // Use timestamp + random for uniqueness (workflow-safe)
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 15);
-  return `run_${timestamp}_${random}`;
+  try {
+    // Use crypto.randomUUID() for collision-resistant IDs (Node.js 14.17.0+)
+    return `run_${randomUUID()}`;
+  } catch {
+    // Fallback: timestamp + high-entropy random (workflow-safe)
+    const timestamp = Date.now();
+    const random1 = Math.random().toString(36).substring(2, 15);
+    const random2 = Math.random().toString(36).substring(2, 15);
+    const performanceNow =
+      typeof performance !== "undefined" && performance.now
+        ? Math.floor(performance.now() * 1000).toString(36)
+        : "";
+    return `run_${timestamp}_${random1}_${random2}${performanceNow}`;
+  }
 }
 
 /**
- * Generate a unique job ID (workflow-safe, no Node.js dependencies)
+ * Generate a unique job ID
+ * Uses crypto.randomUUID() for collision resistance with fallback for compatibility
  */
 export function generateJobId(): string {
-  // Use timestamp + random for uniqueness (workflow-safe)
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 15);
-  return `job_${timestamp}_${random}`;
+  try {
+    // Use crypto.randomUUID() for collision-resistant IDs (Node.js 14.17.0+)
+    return `job_${randomUUID()}`;
+  } catch {
+    // Fallback: timestamp + high-entropy random (workflow-safe)
+    const timestamp = Date.now();
+    const random1 = Math.random().toString(36).substring(2, 15);
+    const random2 = Math.random().toString(36).substring(2, 15);
+    const performanceNow =
+      typeof performance !== "undefined" && performance.now
+        ? Math.floor(performance.now() * 1000).toString(36)
+        : "";
+    return `job_${timestamp}_${random1}_${random2}${performanceNow}`;
+  }
 }
 
 /**
@@ -58,7 +81,7 @@ export function fanoutJobs(request: RunRequest, runId: string): Job[] {
     }
 
     // Create one job per URL
-    for (const [url, runners] of runnersByUrl) {
+    for (const [_url, runners] of runnersByUrl) {
       jobs.push({
         jobId: generateJobId(),
         runners,
@@ -105,7 +128,7 @@ export function fanoutJobs(request: RunRequest, runId: string): Job[] {
     }
 
     // Create one job per URL-region combination
-    for (const [url, regionMap] of runnersByUrlAndRegion) {
+    for (const [_url, regionMap] of runnersByUrlAndRegion) {
       for (const [region, runners] of regionMap) {
         jobs.push({
           jobId: generateJobId(),
@@ -130,7 +153,7 @@ export function getRunnerUrl(region: string): string {
   const runnersEnv = process.env.PLAYWRIGHT_RUNNERS;
   if (!runnersEnv) {
     throw new Error(
-      `PLAYWRIGHT_RUNNERS environment variable is not set. Expected JSON object mapping regions to URLs.`
+      "PLAYWRIGHT_RUNNERS environment variable is not set. Expected JSON object mapping regions to URLs."
     );
   }
 
@@ -165,18 +188,24 @@ export function normalizeJobResult(
     errorMessage?: string;
     durationMs?: number;
   }>,
-  state: JobResult["state"] = "completed",
-  error?: string,
-  startedAt?: Date,
-  completedAt?: Date
+  options: {
+    state?: JobResult["state"];
+    error?: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = {}
 ): JobResult {
+  const { state = "completed", error, startedAt, completedAt } = options;
+
   return {
     jobId: job.jobId,
     region: job.region,
     state,
     results: results.map((r, index) => ({
       name: r.name || job.runners[index]?.name || `runner_${index}`,
-      status: r.status as "pass" | "fail" | "error",
+      status: (["pass", "fail", "error"].includes(r.status)
+        ? r.status
+        : "error") as "pass" | "fail" | "error",
       details: r.details as Record<string, unknown> | undefined,
       errorMessage: r.errorMessage,
       durationMs: r.durationMs,
@@ -196,11 +225,14 @@ export function normalizeJobResult(
  */
 export function aggregateResults(
   runId: string,
-  jobs: Job[],
+  _jobs: Job[],
   jobResults: JobResult[],
-  createdAt: Date,
-  completedAt?: Date
+  options: {
+    createdAt: Date;
+    completedAt?: Date;
+  }
 ): RunSummary {
+  const { createdAt, completedAt } = options;
   // Determine overall state
   const allCompleted = jobResults.every((r) => r.state === "completed");
   const hasFailed = jobResults.some((r) => r.state === "failed");
@@ -231,13 +263,13 @@ export function aggregateResults(
 
   for (const jobResult of jobResults) {
     for (const result of jobResult.results) {
-      total++;
+      total += 1;
       if (result.status === "pass") {
-        passed++;
+        passed += 1;
       } else if (result.status === "fail") {
-        failed++;
+        failed += 1;
       } else if (result.status === "error") {
-        errored++;
+        errored += 1;
       }
     }
   }

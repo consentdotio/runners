@@ -18,7 +18,7 @@ export function createNodeModuleErrorPlugin(): Plugin {
   return {
     name: "runners-node-module-error",
     setup(build) {
-      build.onResolve({ filter: nodeModulesRegex }, (args) => {
+      build.onResolve({ filter: nodeModulesRegex }, (_args) => {
         // Allow Node.js modules - runners run in Node.js context
         // This plugin exists for consistency with workflow, but we don't
         // need to error on Node.js modules for runners

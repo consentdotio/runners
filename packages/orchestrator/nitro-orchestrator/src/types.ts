@@ -18,16 +18,21 @@ export type OrchestratorModuleOptions = {
   runners?: Record<string, string>;
 };
 
-declare module "nitro/types" {
-  //@ts-expect-error - NitroOptions is not defined in nitro/types
-  type NitroOptions = {
-    orchestrator?: OrchestratorModuleOptions;
-  };
-}
+/**
+ * Type helper to safely access Nitro options with orchestrator configuration.
+ *
+ * Note: TypeScript cannot merge type aliases in module augmentation.
+ * Since Nitro uses type aliases for its config options, we cannot properly
+ * augment the types. This helper provides type-safe access to the orchestrator
+ * option while maintaining compatibility with Nitro's type system.
+ */
+export type NitroOptionsWithOrchestrator = {
+  orchestrator?: OrchestratorModuleOptions;
+};
 
-// @ts-expect-error (legacy)
-declare module "nitropack" {
-  type NitroOptions = {
-    orchestrator?: OrchestratorModuleOptions;
-  };
+// Attempt to augment Nitro types for better IntelliSense
+// This may not fully work due to TypeScript's type alias limitations,
+// but provides documentation of the expected shape
+declare module "nitro/types" {
+  interface NitroOptionsAugmentation extends NitroOptionsWithOrchestrator {}
 }

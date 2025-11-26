@@ -1,11 +1,11 @@
-import { createRequire } from "node:module";
 import { access } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { transform } from "@swc/core";
 
 const require = createRequire(import.meta.url);
 
-const RUNNER_MANIFEST_REGEX = /\/\*\*__internal_runners({.*?})\*\//s;
+const _RUNNER_MANIFEST_REGEX = /\/\*\*__internal_runners({.*?})\*\//s;
 
 export type RunnerManifest = {
   runners?: {
@@ -24,6 +24,8 @@ export type SwcTransformOptions = {
   minify?: boolean;
   sourceMaps?: boolean;
 };
+
+const RUNNER_MANIFEST_REGEX = /\/\*\*__internal_runners({.*?})\*\//s;
 
 /**
  * Applies SWC transform to source code, removing "use runner" directives
@@ -121,7 +123,7 @@ export async function applySwcTransform(
     });
 
     // Extract manifest from SWC plugin output (if plugin adds it)
-    const RUNNER_MANIFEST_REGEX = /\/\*\*__internal_runners({.*?})\*\//s;
+
     const runnerCommentMatch = result.code.match(RUNNER_MANIFEST_REGEX);
 
     const parsedRunners = JSON.parse(

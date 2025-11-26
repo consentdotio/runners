@@ -19,6 +19,5 @@ export default defineConfig({
     filename: {
       js: "[name].mjs",
     },
-    externals: [],
   },
 });

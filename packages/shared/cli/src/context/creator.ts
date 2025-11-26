@@ -82,7 +82,7 @@ export async function createCliContext(
   // Add config management (placeholder - implement as needed)
   context.config = {
     loadConfig: async () => null,
-    requireConfig: async () => {
+    requireConfig: () => {
       throw new Error("Config not implemented");
     },
     getPathAliases: () => null,

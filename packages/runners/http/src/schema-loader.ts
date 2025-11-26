@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import type { z } from "zod";
 import type { RunnerSchemaInfo } from "./schema-discovery";
@@ -10,7 +10,7 @@ export async function loadBuildTimeSchemas(
   metadataPath: string
 ): Promise<Map<string, RunnerSchemaInfo>> {
   try {
-    const metadataContent = readFileSync(metadataPath, "utf-8");
+    const metadataContent = await readFile(metadataPath, "utf-8");
     const metadata = JSON.parse(metadataContent) as Array<{
       file: string;
       runners: Array<{ name: string; line: number }>;
@@ -49,6 +49,11 @@ export async function loadBuildTimeSchemas(
             }
           } else {
             // No schema found, but still record the runner
+            if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
+              console.log(
+                `[runners/http] No schema found for runner "${runner.name}"`
+              );
+            }
             schemas.set(runner.name, {
               name: runner.name,
             });

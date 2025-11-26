@@ -13,12 +13,30 @@ export async function discoverAvailableRunners(
   const patterns = pattern ? [pattern] : ["src/**/*.ts", "runners/**/*.ts"];
 
   const allRunners = new Map<string, Runner>();
+  const runnerPatterns = new Map<string, string>(); // Track which pattern each runner came from
 
   for (const p of patterns) {
     try {
       const runners = await discoverRunners(p, true); // requireDirective = true
       for (const [name, runner] of runners) {
+        if (allRunners.has(name)) {
+          const existingPattern = runnerPatterns.get(name);
+          const message = `[orchestrator] Runner "${name}" from pattern "${p}" overrides existing runner from pattern "${existingPattern}"`;
+
+          // Throw error if strict mode is enabled
+          if (process.env.RUNNERS_STRICT_DUPLICATES) {
+            throw new Error(
+              `${message}. Enable strict duplicate checking to prevent this.`
+            );
+          }
+
+          // Log warning in debug mode
+          if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
+            console.warn(message);
+          }
+        }
         allRunners.set(name, runner);
+        runnerPatterns.set(name, p);
       }
     } catch (error) {
       // Log but continue - some patterns might not match

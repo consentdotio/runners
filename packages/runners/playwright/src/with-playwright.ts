@@ -1,5 +1,5 @@
 import type { RunnerContext } from "@runners/core";
-import { chromium, type Browser, type Page } from "playwright";
+import { type Browser, chromium, type Page } from "playwright";
 
 export type PlaywrightContext = RunnerContext & {
   page: Page;

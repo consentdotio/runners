@@ -1,4 +1,3 @@
-export function badRunner(ctx) {
+export function badRunner(_ctx) {
   return { name: "test", status: "pass" };
 }
-

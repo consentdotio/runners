@@ -12,16 +12,22 @@ export type ModuleOptions = {
   region?: string;
 };
 
-declare module "nitro/types" {
-  //@ts-expect-error - NitroOptions is not defined in nitro/types
-  type NitroOptions = {
-    runners?: ModuleOptions;
-  };
-}
+/**
+ * Type helper to safely access Nitro options with runners configuration.
+ *
+ * Note: TypeScript cannot merge type aliases in module augmentation.
+ * Since Nitro uses type aliases for its config options, we cannot properly
+ * augment the types. This helper provides type-safe access to the runners
+ * option while maintaining compatibility with Nitro's type system.
+ */
+export type NitroOptionsWithRunners = {
+  runners?: ModuleOptions;
+};
 
-// @ts-expect-error (legacy)
-declare module "nitropack" {
-  type NitroOptions = {
-    runners?: ModuleOptions;
-  };
+// Attempt to augment Nitro types for better IntelliSense
+// This may not fully work due to TypeScript's type alias limitations,
+// but provides documentation of the expected shape
+declare module "nitro/types" {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface NitroOptionsAugmentation extends NitroOptionsWithRunners {}
 }

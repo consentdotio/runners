@@ -3,24 +3,27 @@ import type {
   FileTextChanges,
   Node,
   Program,
-} from 'typescript/lib/tsserverlibrary';
-import { getDirectiveTypo } from './utils';
+} from "typescript/lib/tsserverlibrary";
+import { getDirectiveTypo } from "./utils";
 
-type TypeScriptLib = typeof import('typescript/lib/tsserverlibrary');
+type TypeScriptLib = typeof import("typescript/lib/tsserverlibrary");
 
 export function getCodeFixes(
   fileName: string,
   start: number,
   end: number,
-  errorCode: number,
-  program: Program,
-  ts: TypeScriptLib
+  options: {
+    errorCode: number;
+    program: Program;
+    ts: TypeScriptLib;
+  }
 ): CodeFixAction[] {
+  const { errorCode, program, ts } = options;
   const fixes: CodeFixAction[] = [];
 
   // Handle typo errors (code 9008)
   if (errorCode === 9008) {
-    return getDirectiveTypoFix(fileName, start, end, program, ts);
+    return getDirectiveTypoFix(fileName, start, end, { program, ts });
   }
 
   return fixes;
@@ -30,9 +33,12 @@ function getDirectiveTypoFix(
   fileName: string,
   start: number,
   end: number,
-  program: Program,
-  ts: TypeScriptLib
+  options: {
+    program: Program;
+    ts: TypeScriptLib;
+  }
 ): CodeFixAction[] {
+  const { program, ts } = options;
   const fixes: CodeFixAction[] = [];
   const sourceFile = program.getSourceFile(fileName);
   if (!sourceFile) {
@@ -56,7 +62,7 @@ function getDirectiveTypoFix(
 
   visit(sourceFile);
 
-  if (!stringNode || !ts.isStringLiteral(stringNode)) {
+  if (!(stringNode && ts.isStringLiteral(stringNode))) {
     return fixes;
   }
 
@@ -87,11 +93,10 @@ function getDirectiveTypoFix(
   };
 
   fixes.push({
-    fixName: 'fix-directive-typo',
+    fixName: "fix-directive-typo",
     description: `Replace with '${expectedDirective}'`,
     changes: [change],
   });
 
   return fixes;
 }
-

@@ -1,24 +1,25 @@
 import type { Nitro, NitroModule } from "nitro/types";
-import type { OrchestratorModuleOptions } from "./types";
+import type {
+  NitroOptionsWithOrchestrator,
+  OrchestratorModuleOptions,
+} from "./types";
 
 export type { OrchestratorModuleOptions } from "./types";
+
+/**
+ * Type-safe helper to extract orchestrator options from Nitro config.
+ * This works around TypeScript's limitation with type alias merging in module augmentation.
+ */
+function getOrchestratorOptions(nitro: Nitro): OrchestratorModuleOptions {
+  const options = nitro.options as Nitro["options"] &
+    NitroOptionsWithOrchestrator;
+  return options.orchestrator || {};
+}
 
 export default {
   name: "runners/nitro-orchestrator",
   setup(nitro: Nitro) {
-    const options =
-      (nitro.options as unknown as { orchestrator?: OrchestratorModuleOptions })
-        .orchestrator || {};
-
-    // Default patterns: scan both src/** and runners/**
-    let patterns: string[];
-    if (options.pattern) {
-      patterns = Array.isArray(options.pattern)
-        ? options.pattern
-        : [options.pattern];
-    } else {
-      patterns = ["src/**/*.ts", "runners/**/*.ts"];
-    }
+    const options = getOrchestratorOptions(nitro);
 
     // Externalize orchestrator package to prevent bundling
     nitro.options.externals ||= {};
@@ -27,20 +28,34 @@ export default {
       if (!externals.external.includes("@runners/orchestrator")) {
         externals.external.push("@runners/orchestrator");
       }
+    } else if (typeof externals.external === "function") {
+      // Preserve existing function behavior by wrapping it
+      const originalFn = externals.external as (
+        id: string,
+        importer?: string
+      ) => boolean | Promise<boolean>;
+      const wrappedFn = (
+        id: string,
+        importer?: string
+      ): boolean | Promise<boolean> => {
+        // Always externalize @runners/orchestrator
+        if (id === "@runners/orchestrator") {
+          return true;
+        }
+        // Call original function (handles both sync and async)
+        return originalFn(id, importer);
+      };
+      // Use type assertion to assign function (TypeScript can't narrow union type)
+      (externals as unknown as { external: typeof wrappedFn }).external =
+        wrappedFn;
     } else {
-      // If externals.external is a function or undefined, convert to array
+      // Only set to array when undefined/null
       externals.external = ["@runners/orchestrator"];
     }
 
-    // Configure remote runner URLs if provided
-    if (options.runners) {
-      // Set PLAYWRIGHT_RUNNERS environment variable for remote mode
-      // This is read by getRunnerUrl() in the orchestrator
-      process.env.PLAYWRIGHT_RUNNERS = JSON.stringify(options.runners);
-    }
-
     // Create virtual handler for orchestrator API
-    addOrchestratorHandler(nitro, patterns);
+    // Pass runners config to handler (will be set in handler module scope, not global)
+    addOrchestratorHandler(nitro, options.runners);
 
     // Add handlers for orchestrator routes
     nitro.options.handlers.push(
@@ -56,10 +71,21 @@ export default {
   },
 } satisfies NitroModule;
 
-function addOrchestratorHandler(nitro: Nitro, _patterns: string[]) {
+function addOrchestratorHandler(
+  nitro: Nitro,
+  runners?: Record<string, string>
+) {
+  // Set PLAYWRIGHT_RUNNERS in handler module scope (not global setup)
+  // This is read by getRunnerUrl() in the orchestrator
+  const runnersEnvSetup =
+    runners && Object.keys(runners).length > 0
+      ? `process.env.PLAYWRIGHT_RUNNERS = ${JSON.stringify(JSON.stringify(runners))};`
+      : "";
+
   if (nitro.routing) {
     // Nitro v3+ (native web handlers)
     nitro.options.virtual["#orchestrator/handler"] = /* js */ `
+    ${runnersEnvSetup}
     import { createOrchestratorHandler } from 'runners/orchestrator';
     
     const handler = createOrchestratorHandler();
@@ -85,6 +111,7 @@ function addOrchestratorHandler(nitro: Nitro, _patterns: string[]) {
   } else {
     // Nitro v2 (legacy)
     nitro.options.virtual["#orchestrator/handler"] = /* js */ `
+    ${runnersEnvSetup}
     import { fromWebHandler } from "h3";
     import { createOrchestratorHandler } from 'runners/orchestrator';
     

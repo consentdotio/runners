@@ -1,10 +1,11 @@
-import type { RunSummary } from "./types";
+import type { JobState, RunSummary } from "./types";
 
 /**
  * In-memory storage for run state
+ * Uses shared JobState type to maintain consistency with orchestrator types
  */
-type RunState = {
-  status: "running" | "completed" | "failed";
+export type RunState = {
+  status: JobState;
   summary?: RunSummary;
   error?: string;
   createdAt: Date;
@@ -37,7 +38,7 @@ export function getRun(runId: string): RunState | undefined {
 export function updateRun(
   runId: string,
   updates: {
-    status?: "running" | "completed" | "failed";
+    status?: JobState;
     summary?: RunSummary;
     error?: string;
   }

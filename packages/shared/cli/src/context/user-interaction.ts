@@ -1,4 +1,4 @@
-import * as p from "@clack/prompts";
+import { confirm, isCancel } from "@clack/prompts";
 import type { CliContext } from "./types";
 
 /**
@@ -20,9 +20,9 @@ export function createUserInteraction(context: CliContext) {
     ): Promise<boolean> => {
       logger.debug(`Confirm action: "${message}", Initial: ${initialValue}`);
 
-      const confirmed = await p.confirm({ message, initialValue });
+      const confirmed = await confirm({ message, initialValue });
 
-      if (p.isCancel(confirmed)) {
+      if (isCancel(confirmed)) {
         error.handleCancel();
         return false; // Unreachable, but TypeScript doesn't know that
       }

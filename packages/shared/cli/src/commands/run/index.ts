@@ -1,10 +1,10 @@
-import { runRunners, defineConfig } from "@runners/core";
 import type { RunnerContext, RunnerResult } from "@runners/core";
-import { loadRunners } from "../../utils/load-runners";
+import { defineConfig, runRunners } from "@runners/core";
 import type { CliContext } from "../../context/types";
+import { loadRunners } from "../../utils/load-runners";
 
 export async function run(context: CliContext): Promise<void> {
-  const { logger, flags, commandArgs, error: errorHandler } = context;
+  const { logger, flags, commandArgs } = context;
 
   let config: {
     url?: string;
@@ -69,11 +69,11 @@ export async function run(context: CliContext): Promise<void> {
 
   // Wrap runners to pass input if url is provided
   const runnersToRun = runnerInput
-    ? runnerFunctions.map((runner) => {
-        return async (ctx: RunnerContext): Promise<RunnerResult<unknown>> => {
-          return runner(ctx, runnerInput);
-        };
-      })
+    ? runnerFunctions.map(
+        (runner) =>
+          async (ctx: RunnerContext): Promise<RunnerResult<unknown>> =>
+            runner(ctx, runnerInput)
+      )
     : runnerFunctions;
 
   const result = await runRunners({

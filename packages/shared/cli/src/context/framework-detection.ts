@@ -6,13 +6,13 @@ import type { CliLogger } from "~/utils/logger";
 /**
  * Framework detection result
  */
-export interface FrameworkDetectionResult {
+export type FrameworkDetectionResult = {
   framework: string | null;
   frameworkVersion: string | null;
   pkg: string;
   hasReact: boolean;
   reactVersion: string | null;
-}
+};
 
 /**
  * Detects the framework and React usage in the project

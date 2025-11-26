@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import * as p from "@clack/prompts";
+import { isCancel, select } from "@clack/prompts";
 import { showHelpMenu } from "./actions/show-help-menu";
-import { displayIntro } from "./components/intro";
 import { run } from "./commands/run";
+import { displayIntro } from "./components/intro";
 
 // Import context creator and types
 import { createCliContext } from "./context/creator";
@@ -84,7 +84,7 @@ export async function main() {
         hint: "Close the CLI",
       });
 
-      const selectedCommandName = await p.select({
+      const selectedCommandName = await select({
         message: formatLogMessage(
           "info",
           "Which command would you like to run?"
@@ -92,7 +92,7 @@ export async function main() {
         options: promptOptions,
       });
 
-      if (p.isCancel(selectedCommandName) || selectedCommandName === "exit") {
+      if (isCancel(selectedCommandName) || selectedCommandName === "exit") {
         logger.debug("Interactive selection cancelled or exit chosen.");
         context.error.handleCancel("Operation cancelled.", {
           command: "interactive_menu",

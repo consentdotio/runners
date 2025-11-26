@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": ["target/release/schema-extractor"],
+      "env": ["RUSTUP_HOME", "CARGO_HOME"]
+    }
+  }
+}

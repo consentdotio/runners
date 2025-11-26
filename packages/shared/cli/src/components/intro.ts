@@ -7,10 +7,7 @@ import type { CliContext } from "~/context/types";
  * @param context - The CLI context
  * @param version - The CLI version string.
  */
-export async function displayIntro(
-  context: CliContext,
-  version: string
-): Promise<void> {
+export function displayIntro(context: CliContext, _version: string): void {
   const { logger } = context;
 
   logger.info(`${color.bold("Welcome!")} Let's get started.`);

@@ -1,11 +1,11 @@
 import { mkdir } from "node:fs/promises";
-import { BaseBuilder } from "@runners/builders";
 import type { RunnerBuilderConfig } from "@runners/builders";
+import { BaseBuilder } from "@runners/builders";
 import type { Nitro } from "nitro/types";
 import { join } from "pathe";
 
 export class LocalBuilder extends BaseBuilder {
-  #outDir: string;
+  readonly #outDir: string;
 
   constructor(nitro: Nitro, patterns?: string[]) {
     const outDir = join(nitro.options.buildDir, "runners");

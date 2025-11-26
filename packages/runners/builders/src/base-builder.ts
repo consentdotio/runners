@@ -1,24 +1,24 @@
 import { dirname, join, relative, resolve } from "node:path";
-import { build, context } from "esbuild";
-import chalk from "chalk";
-import { glob } from "glob";
 import {
   getTsConfigOptions,
   normalizePath,
   writeDebugFile,
 } from "@runners/core";
-import type { RunnerBuilderConfig } from "./types";
+import chalk from "chalk";
+import { build, context } from "esbuild";
+import { glob } from "glob";
+import type { RunnerManifest } from "./apply-swc-transform";
 import { createDiscoverRunnersPlugin } from "./discover-plugin";
 import { createSwcPlugin } from "./swc-esbuild-plugin";
-import type { RunnerManifest } from "./apply-swc-transform";
+import type { RunnerBuilderConfig } from "./types";
 
 const EMIT_SOURCEMAPS_FOR_DEBUGGING =
   process.env.RUNNERS_EMIT_SOURCEMAPS_FOR_DEBUGGING === "1";
 
 const PATH_SEPARATOR_REGEX = /\\/g;
 const TRAILING_SLASH_REGEX = /\/$/;
-const ALIAS_KEY_REGEX = /\/\*$/;
-const ALIAS_PATH_REGEX = /\/\*$/;
+const _ALIAS_KEY_REGEX = /\/\*$/;
+const _ALIAS_PATH_REGEX = /\/\*$/;
 
 /**
  * Determines if we should use production optimizations.
@@ -77,6 +77,9 @@ function getBuildOptions(options: {
     plugins,
   };
 }
+
+const ALIAS_KEY_REGEX = /\/\*$/;
+const ALIAS_PATH_REGEX = /\/\*$/;
 
 /**
  * Base class for runners builders. Provides common build logic for bundling
@@ -177,7 +180,7 @@ export class BaseBuilder {
    * Caches discovered runner entries by input array reference.
    * Uses WeakMap to allow garbage collection when input arrays are no longer referenced.
    */
-  private discoveredEntries: WeakMap<
+  private readonly discoveredEntries: WeakMap<
     string[],
     {
       discoveredRunners: string[];
@@ -396,7 +399,7 @@ export class BaseBuilder {
     const runnerManifest: RunnerManifest = {};
 
     // Get TypeScript config options if not provided
-    if (!tsPaths || !tsBaseUrl) {
+    if (!(tsPaths && tsBaseUrl)) {
       const tsConfig = await getTsConfigOptions(this.config.workingDir);
       tsPaths = tsPaths || tsConfig.paths;
       tsBaseUrl = tsBaseUrl || tsConfig.baseUrl;
@@ -436,8 +439,6 @@ export class BaseBuilder {
         ? {
             alias: Object.fromEntries(
               Object.entries(tsPaths).map(([key, paths]) => {
-                const ALIAS_KEY_REGEX = /\/\*$/;
-                const ALIAS_PATH_REGEX = /\/\*$/;
                 const cleanKey = key.replace(ALIAS_KEY_REGEX, "");
                 const cleanPath = paths[0]?.replace(ALIAS_PATH_REGEX, "") || "";
                 return [cleanKey, resolve(tsBaseUrl, cleanPath)];
@@ -567,7 +568,7 @@ export class BaseBuilder {
     const runnerManifest: RunnerManifest = {};
 
     // Get TypeScript config options if not provided
-    if (!tsPaths || !tsBaseUrl) {
+    if (!(tsPaths && tsBaseUrl)) {
       const tsConfig = await getTsConfigOptions(this.config.workingDir);
       tsPaths = tsPaths || tsConfig.paths;
       tsBaseUrl = tsBaseUrl || tsConfig.baseUrl;
@@ -609,8 +610,6 @@ export class BaseBuilder {
         ? {
             alias: Object.fromEntries(
               Object.entries(tsPaths).map(([key, paths]) => {
-                const ALIAS_KEY_REGEX = /\/\*$/;
-                const ALIAS_PATH_REGEX = /\/\*$/;
                 const cleanKey = key.replace(ALIAS_KEY_REGEX, "");
                 const cleanPath = paths[0]?.replace(ALIAS_PATH_REGEX, "") || "";
                 return [cleanKey, resolve(tsBaseUrl, cleanPath)];

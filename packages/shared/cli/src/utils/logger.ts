@@ -1,4 +1,4 @@
-import * as p from "@clack/prompts";
+import { log, note, outro } from "@clack/prompts";
 import color from "picocolors";
 
 // Define standard log levels
@@ -7,20 +7,20 @@ export const validLogLevels: LogLevel[] = ["error", "warn", "info", "debug"];
 export type CliLogger = Logger & CliExtensions;
 
 // Define CLI-specific extension levels with their method signatures
-export interface CliExtensions {
+export type CliExtensions = {
   message: (message: string, ...args: unknown[]) => void;
   note: (message: string, ...args: unknown[]) => void;
   outro: (message: string, ...args: unknown[]) => void;
   success: (message: string, ...args: unknown[]) => void;
   failed: (message: string, ...args: unknown[]) => void;
-}
+};
 
-interface Logger {
+type Logger = {
   error: (message: string, ...args: unknown[]) => void;
   warn: (message: string, ...args: unknown[]) => void;
   info: (message: string, ...args: unknown[]) => void;
   debug: (message: string, ...args: unknown[]) => void;
-}
+};
 
 const formatArgs = (args: unknown[]): string => {
   if (args.length === 0) {
@@ -89,21 +89,21 @@ export const logMessage = (
 
   switch (logLevel) {
     case "error":
-      p.log.error(formattedMessage);
+      log.error(formattedMessage);
       break;
     case "warn":
-      p.log.warn(formattedMessage);
+      log.warn(formattedMessage);
       break;
     case "info":
     case "debug":
-      p.log.info(formattedMessage);
+      log.info(formattedMessage);
       break;
     case "success":
     case "failed":
-      p.outro(formattedMessage);
+      outro(formattedMessage);
       break;
     default:
-      p.log.message(formattedMessage);
+      log.message(formattedMessage);
   }
 };
 
@@ -145,7 +145,7 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
 
   // Add message method (plain text without prefix)
   extendedLogger.message = (message: string) => {
-    p.log.message(message);
+    log.message(message);
   };
 
   // Add note method (creates a note box)
@@ -154,7 +154,7 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
     const title =
       args.length > 0 && typeof args[0] === "string" ? args[0] : undefined;
     //@ts-expect-error
-    p.note(messageStr, title, {
+    note(messageStr, title, {
       format: (line: string) => line,
     });
   };
@@ -172,7 +172,7 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
 
   // Add outro method (uses plain message)
   extendedLogger.outro = (message: string) => {
-    p.outro(message);
+    outro(message);
   };
 
   return extendedLogger;

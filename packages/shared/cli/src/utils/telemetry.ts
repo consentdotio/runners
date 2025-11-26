@@ -35,7 +35,7 @@ export const TelemetryEventName = {
 export type TelemetryEventName =
   (typeof TelemetryEventName)[keyof typeof TelemetryEventName];
 
-export interface TelemetryOptions {
+export type TelemetryOptions = {
   /**
    * Whether telemetry should be disabled
    */
@@ -50,7 +50,7 @@ export interface TelemetryOptions {
    * Default properties to add to all telemetry events
    */
   defaultProperties?: Record<string, string | number | boolean>;
-}
+};
 
 /**
  * Manages telemetry for the CLI
@@ -63,8 +63,8 @@ export interface TelemetryOptions {
  */
 export class Telemetry {
   private disabled: boolean;
-  private defaultProperties: Record<string, string | number | boolean>;
-  private debug: boolean;
+  private readonly defaultProperties: Record<string, string | number | boolean>;
+  private readonly debug: boolean;
 
   /**
    * Creates a new telemetry instance

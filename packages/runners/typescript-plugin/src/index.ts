@@ -1,23 +1,29 @@
-import ts from 'typescript/lib/tsserverlibrary';
-import { getCodeFixes } from './code-fixes';
-import { getCustomDiagnostics } from './diagnostics';
-import { getHoverInfo } from './hover';
+import type {
+  CodeFixAction,
+  FormatCodeSettings,
+  LanguageService,
+  server,
+  UserPreferences,
+} from "typescript/lib/tsserverlibrary";
+import { getCodeFixes } from "./code-fixes";
+import { getCustomDiagnostics } from "./diagnostics";
+import { getHoverInfo } from "./hover";
 
-interface PluginConfig {
+type PluginConfig = {
   enableDiagnostics?: boolean;
   enableCompletions?: boolean;
-}
+};
 
 function init(modules: {
-  typescript: typeof import('typescript/lib/tsserverlibrary');
+  typescript: typeof import("typescript/lib/tsserverlibrary");
 }) {
   const ts = modules.typescript;
 
-  function create(info: ts.server.PluginCreateInfo) {
+  function create(info: server.PluginCreateInfo) {
     try {
       // Log plugin initialization
       info.project.projectService.logger.info(
-        '@runners/typescript-plugin: Initializing plugin'
+        "@runners/typescript-plugin: Initializing plugin"
       );
 
       // Get plugin configuration
@@ -29,13 +35,15 @@ function init(modules: {
       );
 
       // Set up decorator object
-      const proxy: ts.LanguageService = Object.create(null);
+      const proxy: LanguageService = Object.create(null);
       for (const k of Object.keys(info.languageService) as Array<
-        keyof ts.LanguageService
+        keyof LanguageService
       >) {
-        const x = info.languageService[k]!;
-        proxy[k] = (...args: Array<unknown>) =>
-          x.apply(info.languageService, args);
+        const x = info.languageService[k];
+        if (!x) {
+          continue;
+        }
+        proxy[k] = (...args: unknown[]) => x.apply(info.languageService, args);
       }
 
       // Enhance semantic diagnostics
@@ -72,7 +80,9 @@ function init(modules: {
         );
         try {
           const program = info.languageService.getProgram();
-          if (!program) return prior;
+          if (!program) {
+            return prior;
+          }
 
           const hoverInfo = getHoverInfo(fileName, position, program, ts);
 
@@ -88,13 +98,14 @@ function init(modules: {
 
       // Provide code fixes for diagnostics
       if (enableDiagnostics) {
+        // biome-ignore lint/nursery/useMaxParams: this is a workaround to avoid the max params error
         proxy.getCodeFixesAtPosition = (
           fileName: string,
           start: number,
           end: number,
           errorCodes: number[],
-          formatOptions: ts.FormatCodeSettings,
-          preferences: ts.UserPreferences
+          formatOptions: FormatCodeSettings,
+          preferences: UserPreferences
         ) => {
           const prior = info.languageService.getCodeFixesAtPosition(
             fileName,
@@ -106,18 +117,17 @@ function init(modules: {
           );
           try {
             const program = info.languageService.getProgram();
-            if (!program) return prior;
+            if (!program) {
+              return prior;
+            }
 
-            const customFixes: ts.CodeFixAction[] = [];
+            const customFixes: CodeFixAction[] = [];
             for (const errorCode of errorCodes) {
-              const fixes = getCodeFixes(
-                fileName,
-                start,
-                end,
+              const fixes = getCodeFixes(fileName, start, end, {
                 errorCode,
                 program,
-                ts
-              );
+                ts,
+              });
               customFixes.push(...fixes);
             }
 
@@ -132,7 +142,7 @@ function init(modules: {
       }
 
       info.project.projectService.logger.info(
-        '@runners/typescript-plugin loaded successfully'
+        "@runners/typescript-plugin loaded successfully"
       );
 
       return proxy;
@@ -149,4 +159,3 @@ function init(modules: {
 }
 
 export = init;
-

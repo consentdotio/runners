@@ -1,8 +1,8 @@
-import ts from 'typescript/lib/tsserverlibrary';
+import ts from "typescript/lib/tsserverlibrary";
 
 export function createTestProgram(
   source: string,
-  fileName: string = 'test.ts'
+  fileName = "test.ts"
 ): {
   program: ts.Program;
   sourceFile: ts.SourceFile;
@@ -27,17 +27,19 @@ export function createTestProgram(
       if (name === fileName) {
         return sourceFile;
       }
-      return undefined;
+      return;
     },
-    writeFile: () => {},
-    getCurrentDirectory: () => '',
+    writeFile: () => {
+      throw new Error("writeFile not implemented");
+    },
+    getCurrentDirectory: () => "",
     getDirectories: () => [],
     fileExists: () => true,
-    readFile: () => '',
+    readFile: () => "",
     getCanonicalFileName: (name) => name,
     useCaseSensitiveFileNames: () => true,
-    getNewLine: () => '\n',
-    getDefaultLibFileName: () => 'lib.d.ts',
+    getNewLine: () => "\n",
+    getDefaultLibFileName: () => "lib.d.ts",
   };
 
   const program = ts.createProgram([fileName], compilerOptions, host);
@@ -88,4 +90,3 @@ export function expectNoDiagnostic(
     );
   }
 }
-

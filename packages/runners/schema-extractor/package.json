@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "schema-extractor": "./target/release/schema-extractor"
+    "schema-extractor": "./bin/schema-extractor.js"
   },
   "scripts": {
     "build": "node build.js",
@@ -16,4 +16,3 @@
     "build.js"
   ]
 }
-

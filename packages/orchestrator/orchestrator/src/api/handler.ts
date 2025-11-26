@@ -1,15 +1,15 @@
-import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIGenerator } from "@orpc/openapi";
+import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { onError } from "@orpc/server";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { createOrchestratorRouter } from "../orpc";
-import { orchestratorContract } from "@runners/contracts";
 import {
+  orchestratorContract,
+  RunnerConfigSchema,
   RunRequestSchema,
   RunStatusSchema,
   RunSummarySchema,
-  RunnerConfigSchema,
 } from "@runners/contracts";
+import { createOrchestratorRouter } from "../orpc";
 import { enhanceOpenAPIWithRunnerSchemas } from "../utils/openapi-enhancer";
 
 /**
@@ -64,12 +64,30 @@ export function createOrchestratorHandler() {
         const configuredRunners = process.env.PLAYWRIGHT_RUNNERS
           ? (() => {
               try {
-                return JSON.parse(process.env.PLAYWRIGHT_RUNNERS) as Record<
-                  string,
-                  string
-                >;
+                const parsed = JSON.parse(process.env.PLAYWRIGHT_RUNNERS);
+                // Validate it's a plain object (not array or null)
+                if (
+                  typeof parsed !== "object" ||
+                  parsed === null ||
+                  Array.isArray(parsed)
+                ) {
+                  console.warn(
+                    "[orchestrator] PLAYWRIGHT_RUNNERS must be a JSON object"
+                  );
+                  return;
+                }
+                // Validate all values are strings
+                for (const [key, value] of Object.entries(parsed)) {
+                  if (typeof value !== "string") {
+                    console.warn(
+                      `[orchestrator] PLAYWRIGHT_RUNNERS["${key}"] must be a string`
+                    );
+                    return;
+                  }
+                }
+                return parsed as Record<string, string>;
               } catch {
-                return undefined;
+                return;
               }
             })()
           : undefined;
@@ -262,10 +280,19 @@ export function createOrchestratorHandler() {
 
       // For other errors, log and return 500
       console.error("[orchestrator] Unexpected error:", error);
+      const isDevelopment =
+        process.env.NODE_ENV === "development" ||
+        process.env.NODE_ENV !== "production";
+
+      let errorMessage = "An unexpected error occurred";
+      if (isDevelopment) {
+        errorMessage = error instanceof Error ? error.message : String(error);
+      }
+
       return Response.json(
         {
           error: "Internal server error",
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage,
         },
         { status: 500 }
       );

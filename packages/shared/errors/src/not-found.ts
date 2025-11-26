@@ -1,4 +1,4 @@
-import { RunnerError, isError } from "./base";
+import { isError, RunnerError } from "./base";
 
 /**
  * Thrown when one or more requested runners are not found.
