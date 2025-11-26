@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
+import * as core from "@actions/core";
+import * as github from "@actions/github";
 
 /**
  * Arbitrary structured logging fields for contextual metadata.
@@ -19,20 +19,20 @@ export type LogFields = Record<string, unknown>;
  * `debug_mode` is enabled via inputs.
  */
 export type Logger = {
-	/** Log a verbose diagnostic message (hidden unless debug is enabled). */
-	debug: (message: string, fields?: LogFields) => void;
-	/** Log an informational message. */
-	info: (message: string, fields?: LogFields) => void;
-	/** Log a warning message. */
-	warn: (message: string, fields?: LogFields) => void;
-	/** Log an error message. */
-	error: (message: string, fields?: LogFields) => void;
-	/**
-	 * Create a derived logger that always includes the provided fields.
-	 *
-	 * @param fields - Additional fields to merge into subsequent log calls
-	 */
-	child: (fields: LogFields) => Logger;
+  /** Log a verbose diagnostic message (hidden unless debug is enabled). */
+  debug: (message: string, fields?: LogFields) => void;
+  /** Log an informational message. */
+  info: (message: string, fields?: LogFields) => void;
+  /** Log a warning message. */
+  warn: (message: string, fields?: LogFields) => void;
+  /** Log an error message. */
+  error: (message: string, fields?: LogFields) => void;
+  /**
+   * Create a derived logger that always includes the provided fields.
+   *
+   * @param fields - Additional fields to merge into subsequent log calls
+   */
+  child: (fields: LogFields) => Logger;
 };
 
 /**
@@ -44,14 +44,14 @@ export type Logger = {
  * @internal
  */
 function formatFields(fields?: LogFields): string {
-	if (!fields || Object.keys(fields).length === 0) {
-		return '';
-	}
-	try {
-		return ` ${JSON.stringify(fields)}`;
-	} catch {
-		return '';
-	}
+  if (!fields || Object.keys(fields).length === 0) {
+    return "";
+  }
+  try {
+    return ` ${JSON.stringify(fields)}`;
+  } catch {
+    return "";
+  }
 }
 
 /**
@@ -69,46 +69,46 @@ function formatFields(fields?: LogFields): string {
  * ```
  */
 export function createLogger(
-	debugEnabled: boolean,
-	base: LogFields = {}
+  debugEnabled: boolean,
+  base: LogFields = {}
 ): Logger {
-	const baseMeta = {
-		event: github.context.eventName,
-		ref: github.context.ref,
-		sha: github.context.sha,
-		actor: github.context.actor,
-		...base,
-	};
+  const baseMeta = {
+    event: github.context.eventName,
+    ref: github.context.ref,
+    sha: github.context.sha,
+    actor: github.context.actor,
+    ...base,
+  };
 
-	function log(
-		level: 'debug' | 'info' | 'warn' | 'error',
-		message: string,
-		fields?: LogFields
-	): void {
-		const line = `[c15t] ${message}${formatFields({ ...baseMeta, ...(fields || {}) })}`;
-		if (level === 'debug') {
-			if (debugEnabled) {
-				core.info(line);
-			}
-			return;
-		}
-		if (level === 'info') {
-			core.info(line);
-			return;
-		}
-		if (level === 'warn') {
-			core.warning(line);
-			return;
-		}
-		core.error(line);
-	}
+  function log(
+    level: "debug" | "info" | "warn" | "error",
+    message: string,
+    fields?: LogFields
+  ): void {
+    const line = `[c15t] ${message}${formatFields({ ...baseMeta, ...(fields || {}) })}`;
+    if (level === "debug") {
+      if (debugEnabled) {
+        core.info(line);
+      }
+      return;
+    }
+    if (level === "info") {
+      core.info(line);
+      return;
+    }
+    if (level === "warn") {
+      core.warning(line);
+      return;
+    }
+    core.error(line);
+  }
 
-	return {
-		debug: (m, f) => log('debug', m, f),
-		info: (m, f) => log('info', m, f),
-		warn: (m, f) => log('warn', m, f),
-		error: (m, f) => log('error', m, f),
-		child: (childFields: LogFields) =>
-			createLogger(debugEnabled, { ...baseMeta, ...childFields }),
-	};
+  return {
+    debug: (m, f) => log("debug", m, f),
+    info: (m, f) => log("info", m, f),
+    warn: (m, f) => log("warn", m, f),
+    error: (m, f) => log("error", m, f),
+    child: (childFields: LogFields) =>
+      createLogger(debugEnabled, { ...baseMeta, ...childFields }),
+  };
 }
