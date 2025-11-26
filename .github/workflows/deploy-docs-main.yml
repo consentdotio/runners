@@ -1,4 +1,4 @@
-# 🚀 c15t canary docs scheduled deployment workflow
+# 🚀 c15t main docs scheduled deployment workflow
 name: Deploy docs (Canary)
 
 on:
@@ -14,14 +14,14 @@ permissions:
 jobs:
   deploy:
     concurrency:
-      group: docs-canary-scheduled
+      group: docs-main
       cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: canary
+          ref: main
           fetch-depth: 0
 
       # 📦 Setup pnpm (used by docs template/scripts)
@@ -53,7 +53,7 @@ jobs:
           target: production
 
           # Comment behavior
-          header: c15t-docs-canary-scheduled
+          header: c15t-docs-main-scheduled
           append: "true"
           hide_details: "true"
 
@@ -62,12 +62,10 @@ jobs:
           vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
 
-          assign_alias_on_branch: canary
-          alias_domains: |
-            canary.userunners.dev
+          assign_alias_on_branch: main
 
           # Branch deployment policies
-          deploy_on_push_branches: canary
+          deploy_on_push_branches: main
 
           # Orchestration & gating
           consent_git_token: ${{ secrets.CONSENT_GIT_TOKEN }}
