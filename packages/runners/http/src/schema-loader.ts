@@ -40,8 +40,7 @@ export async function loadBuildTimeSchemas(
     // Read file
     metadataContent = await readFile(metadataPath, "utf-8");
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Failed to read schema metadata file at ${metadataPath}: ${errorMessage}`
     );
@@ -50,7 +49,7 @@ export async function loadBuildTimeSchemas(
   try {
     // Parse JSON
     const parsed = JSON.parse(metadataContent);
-    
+
     // Validate with Zod schema
     metadata = MetadataSchema.parse(parsed);
   } catch (error) {
@@ -61,8 +60,7 @@ export async function loadBuildTimeSchemas(
           .join("; ")}`
       );
     }
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Failed to parse JSON from schema metadata file at ${metadataPath}: ${errorMessage}`
     );
@@ -125,8 +123,7 @@ export async function loadBuildTimeSchemas(
   } catch (error) {
     // This catch handles errors during schema loading/importing
     // The file read/parse/validate errors are already handled above
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Failed to load schemas from metadata file at ${metadataPath}: ${errorMessage}`
     );

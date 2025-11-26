@@ -75,7 +75,7 @@ export async function discoverRunnerSchemas(
           // Convention: {runnerName}InputSchema, {runnerName}Schema, or InputSchema
           // Build ordered list of candidate schema names
           const potentialSchemaNames: string[] = [];
-          
+
           if (exportName.endsWith("Schema")) {
             // If exportName already ends with Schema, use it as-is first
             potentialSchemaNames.push(exportName);
@@ -87,7 +87,7 @@ export async function discoverRunnerSchemas(
             potentialSchemaNames.push(`${exportName}InputSchema`);
             potentialSchemaNames.push(`${exportName}Schema`);
           }
-          
+
           // Fallback to generic InputSchema
           potentialSchemaNames.push("InputSchema");
 
@@ -148,7 +148,7 @@ export async function discoverRunnerSchemas(
     const failureCount = failures.length;
     const showDetails =
       process.env.DEBUG || process.env.RUNNERS_DEBUG || failureCount <= 5;
-    
+
     if (showDetails) {
       console.error(
         `${logPrefix} Schema discovery completed with ${failureCount} failure(s):`
