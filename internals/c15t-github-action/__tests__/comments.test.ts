@@ -62,9 +62,9 @@ describe('comments.ensureComment', () => {
 	it('replaces inner block on skip (no append)', async () => {
 		process.env.GITHUB_REPOSITORY = 'owner/repo';
 		const previousBody = [
-			'<!-- c15t:c15t-docs-preview:START -->',
+			'<!-- c15t:runners-docs-preview:START -->',
 			'old-content',
-			'<!-- c15t:c15t-docs-preview:END -->',
+			'<!-- c15t:runners-docs-preview:END -->',
 		].join('\n');
 		vi.doMock('../src/github/pr-comment', async () => {
 			return {

@@ -113,7 +113,7 @@ export const consentGitToken = core.getInput('consent_git_token', {
 });
 export const docsTemplateRepo =
 	core.getInput('docs_template_repo', { required: false }) ||
-	'consentdotio/c15t-docs';
+	'consentdotio/runners-docs';
 export const docsTemplateRef =
 	core.getInput('docs_template_ref', { required: false }) || 'main';
 export const onlyIfChanged = core.getBooleanInput('only_if_changed', {

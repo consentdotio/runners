@@ -20,12 +20,12 @@ type CreateCommentResponse = Awaited<
 >;
 
 function autoStart(header: string): string {
-	const key = (header || 'c15t-docs-preview').trim() || 'c15t-docs-preview';
+	const key = (header || 'runners-docs-preview').trim() || 'runners-docs-preview';
 	return `<!-- c15t:${key}:START -->`;
 }
 
 function autoEnd(header: string): string {
-	const key = (header || 'c15t-docs-preview').trim() || 'c15t-docs-preview';
+	const key = (header || 'runners-docs-preview').trim() || 'runners-docs-preview';
 	return `<!-- c15t:${key}:END -->`;
 }
 

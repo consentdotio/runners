@@ -61,7 +61,7 @@ jobs:
           target: production
 
           # Comment behavior
-          header: c15t-docs-production
+          header: runners-docs-production
           append: "true"
           hide_details: "true"
 

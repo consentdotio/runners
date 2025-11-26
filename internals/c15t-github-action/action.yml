@@ -13,7 +13,7 @@ inputs:
     required: false
   docs_template_repo:
     description: "Owner/repo of docs template to fetch"
-    default: "consentdotio/c15t-docs"
+    default: "consentdotio/runners-docs"
     required: false
   docs_template_ref:
     description: "Branch or ref of docs template"

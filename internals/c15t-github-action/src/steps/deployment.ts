@@ -201,7 +201,7 @@ export async function performVercelDeployment(
 	// Template change tracking (best effort) - DISABLED
 	let latestTemplateSha: string | undefined;
 	// if (checkTemplateChanges) {
-	// 	const tplRepo = docsTemplateRepo || 'consentdotio/c15t-docs';
+	// 	const tplRepo = docsTemplateRepo || 'consentdotio/runners-docs';
 	// 	const tplRef = docsTemplateRef || 'main';
 	// 	latestTemplateSha = await fetchLatestTemplateSha(
 	// 		octokit,
