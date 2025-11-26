@@ -98,7 +98,7 @@ function addOrchestratorHandler(
         return new Response(
           JSON.stringify({
             error: 'Internal server error',
-            details: error.message,
+            details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined,
           }),
           {
             status: 500,

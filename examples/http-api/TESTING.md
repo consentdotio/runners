@@ -22,7 +22,7 @@ pnpm start
 ```
 
 You should see:
-```
+```text
 Runners HTTP API server running on http://localhost:3000
 Region: us-east-1
 Available tests: exampleTitleVisibleTest, cookieBannerVisibleTest

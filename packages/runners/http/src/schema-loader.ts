@@ -1,7 +1,31 @@
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import type { z } from "zod";
+import { z } from "zod";
 import type { RunnerSchemaInfo } from "./schema-discovery";
+
+/**
+ * Zod schema for schema metadata structure
+ */
+const RunnerInfoSchema = z.object({
+  name: z.string(),
+  line: z.number().int().positive(),
+});
+
+const SchemaInfoSchema = z.object({
+  name: z.string(),
+  runner_name: z.string().optional(),
+  line: z.number().int().positive(),
+});
+
+const FileMetadataSchema = z.object({
+  file: z.string(),
+  runners: z.array(RunnerInfoSchema),
+  schemas: z.array(SchemaInfoSchema),
+});
+
+const MetadataSchema = z.array(FileMetadataSchema);
+
+type Metadata = z.infer<typeof MetadataSchema>;
 
 /**
  * Load pre-extracted schema metadata from build-time extraction
@@ -9,14 +33,42 @@ import type { RunnerSchemaInfo } from "./schema-discovery";
 export async function loadBuildTimeSchemas(
   metadataPath: string
 ): Promise<Map<string, RunnerSchemaInfo>> {
-  try {
-    const metadataContent = await readFile(metadataPath, "utf-8");
-    const metadata = JSON.parse(metadataContent) as Array<{
-      file: string;
-      runners: Array<{ name: string; line: number }>;
-      schemas: Array<{ name: string; runner_name?: string; line: number }>;
-    }>;
+  let metadataContent: string;
+  let metadata: Metadata;
 
+  try {
+    // Read file
+    metadataContent = await readFile(metadataPath, "utf-8");
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to read schema metadata file at ${metadataPath}: ${errorMessage}`
+    );
+  }
+
+  try {
+    // Parse JSON
+    const parsed = JSON.parse(metadataContent);
+    
+    // Validate with Zod schema
+    metadata = MetadataSchema.parse(parsed);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(
+        `Invalid schema metadata format in ${metadataPath}: ${error.issues
+          .map((e) => `${e.path.join(".")}: ${e.message}`)
+          .join("; ")}`
+      );
+    }
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to parse JSON from schema metadata file at ${metadataPath}: ${errorMessage}`
+    );
+  }
+
+  try {
     const schemas = new Map<string, RunnerSchemaInfo>();
 
     // Import actual Zod schemas from the files
@@ -71,12 +123,12 @@ export async function loadBuildTimeSchemas(
 
     return schemas;
   } catch (error) {
-    if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
-      console.warn(
-        `[runners/http] Failed to load build-time schema metadata from ${metadataPath}:`,
-        error
-      );
-    }
-    return new Map();
+    // This catch handles errors during schema loading/importing
+    // The file read/parse/validate errors are already handled above
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to load schemas from metadata file at ${metadataPath}: ${errorMessage}`
+    );
   }
 }

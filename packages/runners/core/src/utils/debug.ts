@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { basename, dirname } from "node:path";
 
 /**
  * Writes debug information to a JSON file for troubleshooting build issues.
@@ -94,11 +94,9 @@ export function getRelativePath(workingDir: string, filePath: string): string {
   let relativePath = normalizePath(relative(workingDir, filePath));
 
   // Handle files discovered outside the working directory
+  // If outside working dir, use just the filename to avoid exposing structure
   if (relativePath.startsWith("../")) {
-    relativePath = relativePath
-      .split("/")
-      .filter((part) => part !== "..")
-      .join("/");
+    relativePath = basename(normalizedPath);
   }
 
   // Final safety check - ensure we never return an absolute path

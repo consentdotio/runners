@@ -144,7 +144,8 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
   const extendedLogger = baseLogger as CliLogger;
 
   // Add message method (plain text without prefix)
-  extendedLogger.message = (message: string) => {
+  // Note: clack's log.message only accepts a single string, so extra args are discarded
+  extendedLogger.message = (message: string, ..._args: unknown[]) => {
     log.message(message);
   };
 
@@ -153,7 +154,7 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
     const messageStr = typeof message === "string" ? message : String(message);
     const title =
       args.length > 0 && typeof args[0] === "string" ? args[0] : undefined;
-    //@ts-expect-error
+    // @ts-expect-error - clack's Note typings don't model title as a separate arg in this version
     note(messageStr, title, {
       format: (line: string) => line,
     });
@@ -171,7 +172,8 @@ export const createCliLogger = (level: LogLevel): CliLogger => {
   };
 
   // Add outro method (uses plain message)
-  extendedLogger.outro = (message: string) => {
+  // Note: clack's outro only accepts a single string, so extra args are discarded
+  extendedLogger.outro = (message: string, ..._args: unknown[]) => {
     outro(message);
   };
 

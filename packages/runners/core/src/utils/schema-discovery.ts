@@ -48,11 +48,13 @@ export async function discoverRunnerSchemas(
   });
 
   const schemas = new Map<string, RunnerSchemaInfo>();
+  const failures: Array<{ file: string; error: string }> = [];
 
   for (const file of runnerFiles) {
+    let hasDirective = false;
     try {
       // Check for directive
-      const hasDirective = await hasAnyDirective(file);
+      hasDirective = await hasAnyDirective(file);
       if (!hasDirective) {
         continue;
       }
@@ -66,18 +68,33 @@ export async function discoverRunnerSchemas(
         // Check if it's a runner function
         if (
           typeof exportValue === "function" &&
-          types.isAsyncFunction(exportValue)
+          (types.isAsyncFunction(exportValue) ||
+            exportValue.constructor.name === "AsyncFunction")
         ) {
           // Try to find corresponding schema exports
           // Convention: {runnerName}InputSchema, {runnerName}Schema, or InputSchema
-          const schemaName = exportName.endsWith("Schema")
-            ? exportName
-            : `${exportName}InputSchema`;
+          // Build ordered list of candidate schema names
+          const potentialSchemaNames: string[] = [];
+          
+          if (exportName.endsWith("Schema")) {
+            // If exportName already ends with Schema, use it as-is first
+            potentialSchemaNames.push(exportName);
+            // Also try InputSchema variant (e.g., "MyRunnerSchema" -> "MyRunnerInputSchema")
+            const baseName = exportName.slice(0, -6); // Remove "Schema" suffix
+            potentialSchemaNames.push(`${baseName}InputSchema`);
+          } else {
+            // Standard naming convention
+            potentialSchemaNames.push(`${exportName}InputSchema`);
+            potentialSchemaNames.push(`${exportName}Schema`);
+          }
+          
+          // Fallback to generic InputSchema
+          potentialSchemaNames.push("InputSchema");
 
-          const schemaExport =
-            module[schemaName] ||
-            module[`${exportName}Schema`] ||
-            module.InputSchema;
+          // Find the first candidate that exists on the module
+          const schemaExport = potentialSchemaNames
+            .map((name) => module[name])
+            .find((schema) => schema !== undefined);
 
           if (schemaExport && typeof schemaExport === "object") {
             // Check if it's a Zod schema (v3 or v4)
@@ -104,13 +121,45 @@ export async function discoverRunnerSchemas(
         }
       }
     } catch (error) {
-      // Log but continue
+      // Only track failures for files that contain the runner directive
+      if (hasDirective) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        failures.push({ file, error: errorMessage });
+
+        // Always emit concise error-level log for files with runner directive
+        console.error(
+          `${logPrefix} Failed to discover schemas from ${file}: ${errorMessage}`
+        );
+      }
+
+      // Preserve existing debug-only verbose logging with full error stack
       if (process.env.DEBUG || process.env.RUNNERS_DEBUG) {
         console.warn(
           `${logPrefix} Failed to discover schemas from ${file}:`,
           error
         );
       }
+    }
+  }
+
+  // Log summary of failures after discovery completes
+  if (failures.length > 0) {
+    const failureCount = failures.length;
+    const showDetails =
+      process.env.DEBUG || process.env.RUNNERS_DEBUG || failureCount <= 5;
+    
+    if (showDetails) {
+      console.error(
+        `${logPrefix} Schema discovery completed with ${failureCount} failure(s):`
+      );
+      for (const { file, error } of failures) {
+        console.error(`  - ${file}: ${error}`);
+      }
+    } else {
+      console.error(
+        `${logPrefix} Schema discovery completed with ${failureCount} failure(s). Set DEBUG=1 to see details.`
+      );
     }
   }
 

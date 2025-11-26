@@ -56,6 +56,15 @@ export const globalFlags: CliFlag[] = [
 
 const DOUBLE_DASH_REGEX = /^--/;
 const SINGLE_DASH_REGEX = /^-/;
+
+/**
+ * Normalizes a flag name by stripping both `--` and `-` prefixes.
+ * This ensures consistent comparison between short (`-h`) and long (`--help`) forms.
+ */
+function normalizeFlagName(name: string): string {
+  return name.replace(DOUBLE_DASH_REGEX, "").replace(SINGLE_DASH_REGEX, "");
+}
+
 /**
  * Parses raw command line arguments into structured flags, command name, and command args.
  *
@@ -74,8 +83,8 @@ export function parseCliArgs(
   // Initialize flags
   for (const flag of globalFlags) {
     const primaryName = flag.names[0]
-      ?.replace(DOUBLE_DASH_REGEX, "")
-      .replace(SINGLE_DASH_REGEX, "");
+      ? normalizeFlagName(flag.names[0])
+      : undefined;
     if (primaryName) {
       parsedFlags[primaryName] = flag.type === "boolean" ? false : undefined;
     }
@@ -90,17 +99,15 @@ export function parseCliArgs(
 
     // Check if this is a flag
     if (DOUBLE_DASH_REGEX.test(arg) || SINGLE_DASH_REGEX.test(arg)) {
-      const flagName = arg
-        .replace(DOUBLE_DASH_REGEX, "")
-        .replace(SINGLE_DASH_REGEX, "");
+      const flagName = normalizeFlagName(arg);
       const flag = globalFlags.find((f) =>
-        f.names.some((name) => name.replace(DOUBLE_DASH_REGEX, "") === flagName)
+        f.names.some((name) => normalizeFlagName(name) === flagName)
       );
 
       if (flag) {
         const primaryName = flag.names[0]
-          ?.replace(DOUBLE_DASH_REGEX, "")
-          .replace(SINGLE_DASH_REGEX, "");
+          ? normalizeFlagName(flag.names[0])
+          : undefined;
         if (primaryName) {
           if (flag.expectsValue && i + 1 < rawArgs.length) {
             parsedFlags[primaryName] = rawArgs[i + 1];

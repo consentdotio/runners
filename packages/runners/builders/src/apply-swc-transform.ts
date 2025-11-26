@@ -5,8 +5,6 @@ import { transform } from "@swc/core";
 
 const require = createRequire(import.meta.url);
 
-const _RUNNER_MANIFEST_REGEX = /\/\*\*__internal_runners({.*?})\*\//s;
-
 export type RunnerManifest = {
   runners?: {
     [relativeFileName: string]: {

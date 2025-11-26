@@ -70,14 +70,6 @@ export default {
       }
     });
 
-    // Allows for HMR - rebuild on dev reload
-    if (nitro.options.dev) {
-      nitro.hooks.hook("dev:reload", async () => {
-        // Watch mode handles incremental rebuilds automatically
-        // No need to rebuild manually
-      });
-    }
-
     // Create virtual handler that imports the bundled runners
     addVirtualHandler(nitro, "/api/runner", "runners/handler", {
       region,
@@ -190,7 +182,7 @@ function addVirtualHandler(
         return new Response(
           JSON.stringify({
             error: 'Internal server error',
-            details: error.message,
+            details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined,
           }),
           {
             status: 500,

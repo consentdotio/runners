@@ -13,6 +13,8 @@
   },
   "files": [
     "target/release/schema-extractor",
+    "target/release/schema-extractor.exe",
+    "bin/",
     "build.js"
   ]
 }

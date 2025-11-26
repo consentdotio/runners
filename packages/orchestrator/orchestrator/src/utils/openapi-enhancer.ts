@@ -4,33 +4,18 @@ import type { z } from "zod";
 import { getAllRunnerSchemaInfo } from "./runner-schemas";
 
 /**
- * Type definitions for Zod v4 internal structure
+ * JSON Schema type for example generation
  */
-type ZodV4Def = {
-  type: string;
-  shape?: Record<string, z.ZodTypeAny>;
-  innerType?: z.ZodTypeAny;
-};
-
-type ZodV4Schema = {
-  _zod: {
-    def: ZodV4Def;
-  };
-};
-
-/**
- * Type definitions for Zod v3 internal structure
- */
-type ZodV3Def = {
-  typeName: string;
-  shape?: () => Record<string, z.ZodTypeAny>;
-  innerType?: {
-    _def: ZodV3Def;
-  };
-};
-
-type ZodV3Schema = {
-  _def: ZodV3Def;
+type JsonSchema = {
+  type?: string | string[];
+  properties?: Record<string, JsonSchema>;
+  required?: string[];
+  items?: JsonSchema;
+  format?: string;
+  oneOf?: JsonSchema[];
+  anyOf?: JsonSchema[];
+  allOf?: JsonSchema[];
+  $ref?: string;
 };
 
 /**
@@ -145,6 +130,10 @@ export async function enhanceOpenAPIWithRunnerSchemas(
           // Limit to first 3 runners for examples
           if (runnerInfo.schema) {
             const exampleName = runnerInfo.name;
+            const exampleInput = await getExampleInputFromSchema(
+              runnerInfo.schema,
+              converter
+            );
             examples[exampleName] = {
               summary: `Example using ${runnerInfo.name} runner (local mode)`,
               value: {
@@ -153,7 +142,7 @@ export async function enhanceOpenAPIWithRunnerSchemas(
                     name: runnerInfo.name,
                     input: {
                       url: "https://example.com",
-                      ...getExampleInputFromSchema(runnerInfo.schema),
+                      ...exampleInput,
                     },
                   },
                 ],
@@ -169,6 +158,10 @@ export async function enhanceOpenAPIWithRunnerSchemas(
           const firstRunner = runnerSchemas[0];
 
           if (firstRunner?.schema) {
+            const exampleInput = await getExampleInputFromSchema(
+              firstRunner.schema,
+              converter
+            );
             examples["remote-mode"] = {
               summary: `Example using remote mode with region ${firstRegion}`,
               value: {
@@ -178,7 +171,7 @@ export async function enhanceOpenAPIWithRunnerSchemas(
                     region: firstRegion,
                     input: {
                       url: "https://example.com",
-                      ...getExampleInputFromSchema(firstRunner.schema),
+                      ...exampleInput,
                     },
                   },
                 ],
@@ -207,84 +200,95 @@ export async function enhanceOpenAPIWithRunnerSchemas(
 }
 
 /**
- * Generates example input from a Zod schema
+ * Generates example input from a Zod schema by converting to JSON Schema first
  */
-function getExampleInputFromSchema(
-  schema: z.ZodTypeAny
-): Record<string, unknown> {
-  const example: Record<string, unknown> = {};
+async function getExampleInputFromSchema(
+  schema: z.ZodTypeAny,
+  converter: ZodToJsonSchemaConverter
+): Promise<Record<string, unknown>> {
+  try {
+    const [, jsonSchema] = await converter.convert(schema, {
+      strategy: "input",
+    });
 
-  // Try to extract shape from object schema (Zod v4 uses _zod)
-  if ("_zod" in schema) {
-    const zodSchema = schema as z.ZodTypeAny & ZodV4Schema;
-    if (zodSchema._zod?.def?.type === "object" && zodSchema._zod.def.shape) {
-      const shape = zodSchema._zod.def.shape;
-      for (const [key, value] of Object.entries(shape)) {
-        const zodValue = value as z.ZodTypeAny;
-
-        // Handle optional types in Zod v4
-        let innerType = zodValue;
-        if ("_zod" in zodValue) {
-          const zodValueWithZod = zodValue as z.ZodTypeAny & ZodV4Schema;
-          if (zodValueWithZod._zod?.def?.type === "optional") {
-            innerType = zodValueWithZod._zod.def.innerType as z.ZodTypeAny;
-          }
-        }
-
-        // Generate example based on type (Zod v4 structure)
-        if ("_zod" in innerType) {
-          const innerZod = innerType as z.ZodTypeAny & ZodV4Schema;
-          if (innerZod._zod?.def?.type === "string") {
-            example[key] =
-              key === "url" ? "https://example.com" : `example-${key}`;
-          } else if (innerZod._zod?.def?.type === "number") {
-            example[key] = 0;
-          } else if (innerZod._zod?.def?.type === "boolean") {
-            example[key] = true;
-          } else {
-            example[key] = null;
-          }
-        }
-      }
-    }
+    const example = generateExampleFromJsonSchema(jsonSchema as JsonSchema);
+    // Ensure we return an object (in case schema is not an object type)
+    return typeof example === "object" &&
+      example !== null &&
+      !Array.isArray(example)
+      ? (example as Record<string, unknown>)
+      : {};
+  } catch {
+    // Fallback: return empty object if conversion fails
+    return {};
   }
-  // Fallback for Zod v3 structure
-  else if ("_def" in schema) {
-    const zodSchema = schema as z.ZodTypeAny & ZodV3Schema;
-    const def = zodSchema._def;
-    if (
-      def &&
-      typeof def === "object" &&
-      "typeName" in def &&
-      def.typeName === "ZodObject"
-    ) {
-      const shape = def.shape?.();
-      if (shape) {
-        for (const [key, value] of Object.entries(shape)) {
-          const zodValue = value as z.ZodTypeAny;
-          const valueDef = (zodValue as z.ZodTypeAny & ZodV3Schema)?._def;
+}
 
-          // Handle optional types
-          let innerDef: ZodV3Def | undefined = valueDef;
-          if (valueDef?.typeName === "ZodOptional") {
-            innerDef = valueDef.innerType?._def;
-          }
-
-          // Generate example based on type
-          if (innerDef?.typeName === "ZodString") {
-            example[key] =
-              key === "url" ? "https://example.com" : `example-${key}`;
-          } else if (innerDef?.typeName === "ZodNumber") {
-            example[key] = 0;
-          } else if (innerDef?.typeName === "ZodBoolean") {
-            example[key] = true;
-          } else {
-            example[key] = null;
-          }
-        }
-      }
-    }
+/**
+ * Generates example values from a JSON Schema
+ */
+function generateExampleFromJsonSchema(
+  jsonSchema: JsonSchema,
+  key?: string
+): unknown {
+  // Handle $ref (references) - return null as we can't resolve them here
+  if (jsonSchema.$ref) {
+    return null;
   }
 
-  return example;
+  // Handle oneOf/anyOf/allOf - use first option
+  if (jsonSchema.oneOf && jsonSchema.oneOf.length > 0 && jsonSchema.oneOf[0]) {
+    return generateExampleFromJsonSchema(jsonSchema.oneOf[0], key);
+  }
+  if (jsonSchema.anyOf && jsonSchema.anyOf.length > 0 && jsonSchema.anyOf[0]) {
+    return generateExampleFromJsonSchema(jsonSchema.anyOf[0], key);
+  }
+  if (jsonSchema.allOf && jsonSchema.allOf.length > 0 && jsonSchema.allOf[0]) {
+    // Merge allOf schemas - use the first one for simplicity
+    return generateExampleFromJsonSchema(jsonSchema.allOf[0], key);
+  }
+
+  const type = Array.isArray(jsonSchema.type)
+    ? jsonSchema.type[0]
+    : jsonSchema.type;
+
+  switch (type) {
+    case "object": {
+      const example: Record<string, unknown> = {};
+      if (jsonSchema.properties) {
+        for (const [propKey, propSchema] of Object.entries(
+          jsonSchema.properties
+        )) {
+          example[propKey] = generateExampleFromJsonSchema(propSchema, propKey);
+        }
+      }
+      return example;
+    }
+    case "array": {
+      if (jsonSchema.items) {
+        return [generateExampleFromJsonSchema(jsonSchema.items, key)];
+      }
+      return [];
+    }
+    case "string": {
+      // Special handling for URL format or "url" key
+      if (jsonSchema.format === "uri" || key === "url") {
+        return "https://example.com";
+      }
+      return key ? `example-${key}` : "example";
+    }
+    case "number":
+    case "integer": {
+      return 0;
+    }
+    case "boolean": {
+      return true;
+    }
+    case "null": {
+      return null;
+    }
+    default: {
+      return null;
+    }
+  }
 }

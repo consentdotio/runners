@@ -43,7 +43,7 @@ node build.js
 
 The schema extractor is typically used as a build-time dependency in other packages. The binary is located at:
 
-```
+```text
 node_modules/@runners/schema-extractor/target/release/schema-extractor
 ```
 
@@ -224,7 +224,7 @@ The tool uses tree-sitter for robust parsing. If you encounter issues:
 
 ### Project Structure
 
-```
+```text
 src/
   ├── main.rs      # Entry point and orchestration
   ├── cli.rs       # CLI argument parsing

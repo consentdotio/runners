@@ -17,8 +17,6 @@ const EMIT_SOURCEMAPS_FOR_DEBUGGING =
 
 const PATH_SEPARATOR_REGEX = /\\/g;
 const TRAILING_SLASH_REGEX = /\/$/;
-const _ALIAS_KEY_REGEX = /\/\*$/;
-const _ALIAS_PATH_REGEX = /\/\*$/;
 
 /**
  * Determines if we should use production optimizations.
